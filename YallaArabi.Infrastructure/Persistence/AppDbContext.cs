@@ -10,6 +10,10 @@ public class AppDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Level> Levels => Set<Level>();
+    public DbSet<Category> Categories => Set<Category>();
+    public DbSet<Lesson> Lessons => Set<Lesson>();
+    public DbSet<StudentLessonProgress> StudentLessonProgress => Set<StudentLessonProgress>();
+    public DbSet<Word> Words => Set<Word>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

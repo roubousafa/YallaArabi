@@ -31,4 +31,40 @@ public class OnboardingController : ControllerBase
             ? Ok(ApiResponse<SelectLevelResponse>.Ok(result.Value!))
             : BadRequest(ApiResponse<SelectLevelResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
+
+    [HttpGet("daily-goal-options")]
+    public async Task<IActionResult> GetDailyGoalOptions(CancellationToken ct)
+    {
+        var options = await _sender.Send(new GetDailyGoalOptionsQuery(), ct);
+        return Ok(ApiResponse<IReadOnlyList<DailyGoalOption>>.Ok(options));
+    }
+
+    [Authorize]
+    [HttpPost("daily-goal")]
+    public async Task<IActionResult> SetDailyGoal(SetDailyGoalCommand command, CancellationToken ct)
+    {
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<SetDailyGoalResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<SetDailyGoalResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpGet("learning-motivation-options")]
+    public async Task<IActionResult> GetLearningMotivationOptions(CancellationToken ct)
+    {
+        var options = await _sender.Send(new GetLearningMotivationOptionsQuery(), ct);
+        return Ok(ApiResponse<IReadOnlyList<LearningMotivationOption>>.Ok(options));
+    }
+
+    [Authorize]
+    [HttpPost("learning-motivation")]
+    public async Task<IActionResult> SetLearningMotivation(SetLearningMotivationCommand command, CancellationToken ct)
+    {
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<SetLearningMotivationResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<SetLearningMotivationResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
 }

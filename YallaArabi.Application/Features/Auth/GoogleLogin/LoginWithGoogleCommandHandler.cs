@@ -55,7 +55,7 @@ public sealed class LoginWithGoogleCommandHandler : IRequestHandler<LoginWithGoo
         var refreshTokenPlain = _jwtTokenGenerator.GenerateRefreshToken();
         var refreshTokenHash = HashToken(refreshTokenPlain);
 
-        var refreshTokenEntity = RefreshToken.Issue(user.Id, refreshTokenHash, DateTime.UtcNow.AddDays(30));
+        var refreshTokenEntity = Domain.Entities.RefreshToken.Issue(user.Id, refreshTokenHash, DateTime.UtcNow.AddDays(30));
         await _refreshTokenRepository.AddAsync(refreshTokenEntity, cancellationToken);
         await _refreshTokenRepository.SaveChangesAsync(cancellationToken);
 

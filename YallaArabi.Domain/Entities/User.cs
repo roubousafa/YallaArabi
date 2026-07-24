@@ -8,13 +8,15 @@ public sealed class User : AggregateRoot
 {
     public string FullName { get; private set; } = default!;
     public Email Email { get; private set; } = default!;
-    public string PasswordHash { get; private set; } = default!;
+    public string? PasswordHash { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public string SubscriptionStatus { get; private set; } = "free";
     public string? PasswordResetTokenHash { get; private set; }
     public DateTime? PasswordResetTokenExpiresAt { get; private set; }
     public Guid? CurrentLevelId { get; private set; }
     public string? GoogleId { get; private set; }
+    public int? DailyGoalMinutes { get; private set; }
+    public string? LearningMotivation { get; private set; }
 
 
     private User() { }
@@ -122,5 +124,21 @@ public sealed class User : AggregateRoot
     public void SetCurrentLevel(Guid levelId)
     {
         CurrentLevelId = levelId;
+    }
+
+    public void SetDailyGoal(int minutes)
+    {
+        if (minutes <= 0)
+            throw new ArgumentException("Daily goal minutes must be positive", nameof(minutes));
+
+        DailyGoalMinutes = minutes;
+    }
+
+    public void SetLearningMotivation(string motivation)
+    {
+        if (string.IsNullOrWhiteSpace(motivation))
+            throw new ArgumentException("Learning motivation is required", nameof(motivation));
+
+        LearningMotivation = motivation;
     }
 }

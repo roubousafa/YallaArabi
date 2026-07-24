@@ -21,17 +21,22 @@ public static class DependencyInjection
 
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
         services.Configure<GoogleOptions>(configuration.GetSection("Google"));
+        services.Configure<EmailOptions>(configuration.GetSection("Email"));
 
         services.AddHttpContextAccessor();
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<ILevelRepository, LevelRepository>();
+        services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<ILessonRepository, LessonRepository>();
+        services.AddScoped<IStudentLessonProgressRepository, StudentLessonProgressRepository>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
-        services.AddScoped<IEmailSender, ConsoleEmailSender>();
+        services.AddScoped<IEmailSender, BrevoEmailSender>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IGoogleAuthValidator, GoogleAuthValidator>();
+        services.AddScoped<IWordRepository, WordRepository>();
 
         return services;
     }

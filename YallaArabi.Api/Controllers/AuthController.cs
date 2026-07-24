@@ -6,6 +6,8 @@ using YallaArabi.Application.Common;
 using YallaArabi.Application.Features.Auth.ForgotPassword;
 using YallaArabi.Application.Features.Auth.GoogleLogin;
 using YallaArabi.Application.Features.Auth.Login;
+using YallaArabi.Application.Features.Auth.Logout;
+using YallaArabi.Application.Features.Auth.RefreshToken;
 using YallaArabi.Application.Features.Auth.Register;
 using YallaArabi.Application.Features.Auth.ResetPassword;
 using YallaArabi.Application.Features.Profile.UpdateProfile;
@@ -48,6 +50,24 @@ public class AuthController : ControllerBase
         return result.IsSuccess
             ? Ok(ApiResponse<AuthResponse>.Ok(result.Value!))
             : Unauthorized(ApiResponse<AuthResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh(RefreshTokenCommand command, CancellationToken ct)
+    {
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<AuthResponse>.Ok(result.Value!))
+            : Unauthorized(ApiResponse<AuthResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout(LogoutCommand command, CancellationToken ct)
+    {
+        await _sender.Send(command, ct);
+
+        return Ok(ApiResponse<object>.Ok(new { message = "Logged out successfully." }));
     }
 
     [HttpPost("forgot-password")]
