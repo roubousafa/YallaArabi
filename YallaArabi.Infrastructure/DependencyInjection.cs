@@ -5,6 +5,9 @@ using Microsoft.Extensions.DependencyInjection;
 using YallaArabi.Application.Interfaces;
 using YallaArabi.Infrastructure.Authentication;
 using YallaArabi.Infrastructure.Emailing;
+using YallaArabi.Infrastructure.Notifications;
+using YallaArabi.Infrastructure.Parsing;
+using YallaArabi.Infrastructure.Payments;
 using YallaArabi.Infrastructure.Persistence;
 using YallaArabi.Infrastructure.Repositories;
 using YallaArabi.Infrastructure.Security;
@@ -37,7 +40,12 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IGoogleAuthValidator, GoogleAuthValidator>();
         services.AddScoped<IWordRepository, WordRepository>();
-
+        services.AddScoped<ISavedWordRepository, SavedWordRepository>();
+        services.AddScoped<IWordReviewRepository, WordReviewRepository>();
+        services.AddScoped<IPushNotificationSender, ConsolePushNotificationSender>();
+        services.AddScoped<IExcelWordParser, ExcelWordParser>();
+        services.AddScoped<IPaymentGateway, FakePaymentGateway>();
+        services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
         return services;
     }
 }

@@ -17,7 +17,8 @@ public sealed class User : AggregateRoot
     public string? GoogleId { get; private set; }
     public int? DailyGoalMinutes { get; private set; }
     public string? LearningMotivation { get; private set; }
-
+    public string? FcmToken { get; private set; }
+    public string Role { get; private set; } = "Student";
 
     private User() { }
 
@@ -140,5 +141,28 @@ public sealed class User : AggregateRoot
             throw new ArgumentException("Learning motivation is required", nameof(motivation));
 
         LearningMotivation = motivation;
+    }
+
+    public void SetFcmToken(string fcmToken)
+    {
+        if (string.IsNullOrWhiteSpace(fcmToken))
+            throw new ArgumentException("FCM token is required", nameof(fcmToken));
+
+        FcmToken = fcmToken;
+    }
+
+    public void PromoteToAdmin()
+    {
+        Role = "Admin";
+    }
+
+    public void ActivatePremium()
+    {
+        SubscriptionStatus = "premium";
+    }
+
+    public void DeactivatePremium()
+    {
+        SubscriptionStatus = "free";
     }
 }

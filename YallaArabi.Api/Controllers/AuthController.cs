@@ -10,6 +10,7 @@ using YallaArabi.Application.Features.Auth.Logout;
 using YallaArabi.Application.Features.Auth.RefreshToken;
 using YallaArabi.Application.Features.Auth.Register;
 using YallaArabi.Application.Features.Auth.ResetPassword;
+using YallaArabi.Application.Features.Notifications.RegisterFcmToken;
 using YallaArabi.Application.Features.Profile.UpdateProfile;
 
 namespace YallaArabi.Api.Controllers;
@@ -97,5 +98,16 @@ public class AuthController : ControllerBase
         return result.IsSuccess
             ? Ok(ApiResponse<UpdateProfileResponse>.Ok(result.Value!))
             : BadRequest(ApiResponse<UpdateProfileResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [Authorize]
+    [HttpPost("fcm-token")]
+    public async Task<IActionResult> RegisterFcmToken(RegisterFcmTokenCommand command, CancellationToken ct)
+    {
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(new { message = "FCM token registered successfully." }))
+            : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 }

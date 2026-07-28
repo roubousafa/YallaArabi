@@ -39,4 +39,10 @@ public class WordRepository : IWordRepository
 
     public async Task<Word?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         await _context.Words.FirstOrDefaultAsync(w => w.Id == id, ct);
+
+    public async Task AddAsync(Word word, CancellationToken ct = default) =>
+       await _context.Words.AddAsync(word, ct);
+
+    public async Task SaveChangesAsync(CancellationToken ct = default) =>
+        await _context.SaveChangesAsync(ct);
 }

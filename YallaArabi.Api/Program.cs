@@ -6,6 +6,7 @@ using Microsoft.OpenApi.Models;
 using YallaArabi.Api.Middleware;
 using YallaArabi.Application;
 using YallaArabi.Infrastructure;
+using YallaArabi.Infrastructure.Seeding;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -88,6 +89,8 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+await AdminSeeder.SeedAsync(app.Services);
+
 var port = Environment.GetEnvironmentVariable("PORT");
 if (!string.IsNullOrEmpty(port))
 {
@@ -96,14 +99,14 @@ if (!string.IsNullOrEmpty(port))
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+//if (app.Environment.IsDevelopment())
+//{
+//    app.UseSwagger();
+//    app.UseSwaggerUI();
+//}
 
-//app.UseSwagger();
-//app.UseSwaggerUI();
+app.UseSwagger();
+app.UseSwaggerUI();
 app.UseCors("Frontend");
 
 

@@ -13,7 +13,10 @@ public class AppDbContext : DbContext
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Lesson> Lessons => Set<Lesson>();
     public DbSet<StudentLessonProgress> StudentLessonProgress => Set<StudentLessonProgress>();
+    public DbSet<SavedWord> SavedWords => Set<SavedWord>();
     public DbSet<Word> Words => Set<Word>();
+    public DbSet<WordReview> WordReviews => Set<WordReview>();
+    public DbSet<Subscription> Subscriptions => Set<Subscription>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
