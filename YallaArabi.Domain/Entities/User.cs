@@ -165,4 +165,21 @@ public sealed class User : AggregateRoot
     {
         SubscriptionStatus = "free";
     }
+
+    public void ChangeRole(string role)
+    {
+        if (string.IsNullOrWhiteSpace(role))
+            throw new ArgumentException("Role is required", nameof(role));
+
+        Role = role;
+    }
+
+    public void UpdateByAdmin(string fullName, Guid? currentLevelId)
+    {
+        if (string.IsNullOrWhiteSpace(fullName))
+            throw new ArgumentException("Full name cannot be empty", nameof(fullName));
+
+        FullName = fullName.Trim();
+        CurrentLevelId = currentLevelId;
+    }
 }

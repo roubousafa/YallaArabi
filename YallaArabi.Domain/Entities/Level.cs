@@ -26,4 +26,13 @@ public sealed class Level : Entity
             OrderIndex = orderIndex
         };
     }
+
+    public void Update(string name, int orderIndex)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("Level name is required", nameof(name));
+
+        Name = name.Trim();
+        OrderIndex = orderIndex;
+    }
 }

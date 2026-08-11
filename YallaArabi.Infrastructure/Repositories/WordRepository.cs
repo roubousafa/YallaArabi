@@ -25,7 +25,6 @@ public class WordRepository : IWordRepository
         }
 
         var pattern = $"%{normalizedQuery}%";
-
         query = query.Where(w =>
             EF.Functions.Like(w.NormalizedArabic, pattern) ||
             EF.Functions.Like(w.NormalizedTransliteration, pattern) ||
@@ -40,8 +39,44 @@ public class WordRepository : IWordRepository
     public async Task<Word?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         await _context.Words.FirstOrDefaultAsync(w => w.Id == id, ct);
 
+    public async Task<(IReadOnlyList<Word> Items, int TotalCount)> GetPagedAsync(
+        string? searchTerm, Guid? levelId, int pageNumber, int pageSize, CancellationToken ct = default)
+    {
+        var query = _context.Words.AsQueryable();
+
+        if (levelId.HasValue)
+        {
+            query = query.Where(w => w.LevelId == levelId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var pattern = $"%{searchTerm.Trim()}%";
+            query = query.Where(w =>
+                EF.Functions.Like(w.ArabicText, pattern) ||
+                EF.Functions.Like(w.Transliteration, pattern) ||
+                EF.Functions.Like(w.EnglishMeaning, pattern));
+        }
+
+        var totalCount = await query.CountAsync(ct);
+
+        var items = await query
+            .OrderByDescending(w => w.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        return (items, totalCount);
+    }
+
     public async Task AddAsync(Word word, CancellationToken ct = default) =>
-       await _context.Words.AddAsync(word, ct);
+        await _context.Words.AddAsync(word, ct);
+
+    public async Task RemoveAsync(Word word, CancellationToken ct = default)
+    {
+        _context.Words.Remove(word);
+        await Task.CompletedTask;
+    }
 
     public async Task SaveChangesAsync(CancellationToken ct = default) =>
         await _context.SaveChangesAsync(ct);

@@ -17,4 +17,13 @@ public class ConsolePushNotificationSender : IPushNotificationSender
 
         return Task.CompletedTask;
     }
+
+    public Task SendCustomNotificationAsync(string fcmToken, string title, string body, CancellationToken ct = default)
+    {
+        _logger.LogInformation(
+            "[DEV PUSH NOTIFICATION] To token: {Token} — Title: \"{Title}\" — Body: \"{Body}\"",
+            fcmToken, title, body);
+
+        return Task.CompletedTask;
+    }
 }

@@ -12,5 +12,7 @@ public sealed record LevelMapItem(
     string Status,
     int TotalLessons,
     int CompletedLessons,
-    int CompletionPercentage
+    int CompletionPercentage,
+    bool IsPremium,
+    bool IsCurrent
 );

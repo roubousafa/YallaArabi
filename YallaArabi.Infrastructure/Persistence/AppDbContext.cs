@@ -17,6 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<Word> Words => Set<Word>();
     public DbSet<WordReview> WordReviews => Set<WordReview>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

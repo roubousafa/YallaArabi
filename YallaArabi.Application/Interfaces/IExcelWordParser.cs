@@ -19,3 +19,8 @@ public sealed record ExcelParseResult(
     IReadOnlyList<ExcelWordRow> Rows,
     IReadOnlyList<string> ParseErrors
 );
+
+public interface IExcelTemplateGenerator
+{
+    byte[] GenerateWordsTemplate();
+}

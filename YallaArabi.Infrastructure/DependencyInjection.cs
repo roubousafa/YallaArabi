@@ -46,6 +46,8 @@ public static class DependencyInjection
         services.AddScoped<IExcelWordParser, ExcelWordParser>();
         services.AddScoped<IPaymentGateway, FakePaymentGateway>();
         services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+        services.AddScoped<IExcelTemplateGenerator, ExcelTemplateGenerator>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
         return services;
     }
 }

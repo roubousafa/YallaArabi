@@ -6,10 +6,13 @@ namespace YallaArabi.Application.Features.Levels.GetLevelDetails;
 
 public sealed class GetLevelDetailsQueryHandler : IRequestHandler<GetLevelDetailsQuery, Result<LevelDetailsResponse>>
 {
+    private const string FreeLevelCode = "A0";
+
     private readonly ILevelRepository _levelRepository;
     private readonly ICategoryRepository _categoryRepository;
     private readonly ILessonRepository _lessonRepository;
     private readonly IStudentLessonProgressRepository _progressRepository;
+    private readonly ISubscriptionRepository _subscriptionRepository;
     private readonly ICurrentUserService _currentUserService;
 
     public GetLevelDetailsQueryHandler(
@@ -17,12 +20,14 @@ public sealed class GetLevelDetailsQueryHandler : IRequestHandler<GetLevelDetail
         ICategoryRepository categoryRepository,
         ILessonRepository lessonRepository,
         IStudentLessonProgressRepository progressRepository,
+        ISubscriptionRepository subscriptionRepository,
         ICurrentUserService currentUserService)
     {
         _levelRepository = levelRepository;
         _categoryRepository = categoryRepository;
         _lessonRepository = lessonRepository;
         _progressRepository = progressRepository;
+        _subscriptionRepository = subscriptionRepository;
         _currentUserService = currentUserService;
     }
 
@@ -40,6 +45,17 @@ public sealed class GetLevelDetailsQueryHandler : IRequestHandler<GetLevelDetail
         if (level is null)
         {
             return Result<LevelDetailsResponse>.Failure("level_not_found", "Level not found");
+        }
+
+        if (level.Code != FreeLevelCode)
+        {
+            var activeSubscription = await _subscriptionRepository.GetActiveByUserIdAsync(currentUserId.Value, cancellationToken);
+            var hasPremium = activeSubscription is not null && activeSubscription.IsCurrentlyActive();
+
+            if (!hasPremium)
+            {
+                return Result<LevelDetailsResponse>.Failure("premium_required", "This level requires a premium subscription");
+            }
         }
 
         var categories = await _categoryRepository.GetByLevelIdAsync(level.Id, cancellationToken);

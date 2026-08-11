@@ -51,4 +51,31 @@ public sealed class Word : Entity
             CreatedAt = DateTime.UtcNow
         };
     }
+    public void Update(
+        Guid levelId,
+        string arabicText,
+        string transliteration,
+        string englishMeaning,
+        string? audioUrl,
+        string? imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(arabicText))
+            throw new ArgumentException("Arabic text is required", nameof(arabicText));
+
+        if (string.IsNullOrWhiteSpace(transliteration))
+            throw new ArgumentException("Transliteration is required", nameof(transliteration));
+
+        if (string.IsNullOrWhiteSpace(englishMeaning))
+            throw new ArgumentException("English meaning is required", nameof(englishMeaning));
+
+        LevelId = levelId;
+        ArabicText = arabicText.Trim();
+        Transliteration = transliteration.Trim();
+        EnglishMeaning = englishMeaning.Trim();
+        NormalizedArabic = TextNormalizer.NormalizeArabic(arabicText);
+        NormalizedTransliteration = TextNormalizer.NormalizeLatin(transliteration);
+        NormalizedEnglish = TextNormalizer.NormalizeLatin(englishMeaning);
+        AudioUrl = audioUrl;
+        ImageUrl = imageUrl;
+    }
 }
