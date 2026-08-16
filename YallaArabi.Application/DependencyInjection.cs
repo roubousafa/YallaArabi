@@ -3,6 +3,8 @@ using FluentValidation;
 using Mediator;
 using Microsoft.Extensions.DependencyInjection;
 using YallaArabi.Application.Behaviors;
+using YallaArabi.Application.Interfaces;
+using YallaArabi.Application.Services;
 
 namespace YallaArabi.Application;
 
@@ -12,6 +14,7 @@ public static class DependencyInjection
     {
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
         services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+        services.AddScoped<IPointsService, PointsService>();
 
         return services;
     }

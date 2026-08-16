@@ -7,17 +7,22 @@ namespace YallaArabi.Application.Features.Words.SaveWord;
 
 public sealed class SaveWordCommandHandler : IRequestHandler<SaveWordCommand, Result<SaveWordResponse>>
 {
+    private const string WordSavedActionKey = "word_saved";
+
     private readonly IWordRepository _wordRepository;
     private readonly ISavedWordRepository _savedWordRepository;
+    private readonly IPointsService _pointsService;
     private readonly ICurrentUserService _currentUserService;
 
     public SaveWordCommandHandler(
         IWordRepository wordRepository,
         ISavedWordRepository savedWordRepository,
+        IPointsService pointsService,
         ICurrentUserService currentUserService)
     {
         _wordRepository = wordRepository;
         _savedWordRepository = savedWordRepository;
+        _pointsService = pointsService;
         _currentUserService = currentUserService;
     }
 
@@ -41,13 +46,19 @@ public sealed class SaveWordCommandHandler : IRequestHandler<SaveWordCommand, Re
 
         if (alreadySaved)
         {
-            return Result<SaveWordResponse>.Success(new SaveWordResponse(request.WordId, true));
+            return Result<SaveWordResponse>.Success(new SaveWordResponse(request.WordId, true, 0));
         }
 
         var savedWord = SavedWord.Create(currentUserId.Value, request.WordId);
         await _savedWordRepository.AddAsync(savedWord, cancellationToken);
         await _savedWordRepository.SaveChangesAsync(cancellationToken);
 
-        return Result<SaveWordResponse>.Success(new SaveWordResponse(request.WordId, false));
+        var pointsEarned = await _pointsService.AwardPointsAsync(
+            currentUserId.Value,
+            WordSavedActionKey,
+            request.WordId,
+            ct: cancellationToken);
+
+        return Result<SaveWordResponse>.Success(new SaveWordResponse(request.WordId, false, pointsEarned));
     }
 }

@@ -48,6 +48,12 @@ public static class DependencyInjection
         services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
         services.AddScoped<IExcelTemplateGenerator, ExcelTemplateGenerator>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<IPointRuleRepository, PointRuleRepository>();
+        services.AddScoped<IPointTransactionRepository, PointTransactionRepository>();
+        services.AddScoped<IChallengeRepository, ChallengeRepository>();
+        services.AddScoped<IChallengeQuestionRepository, ChallengeQuestionRepository>();
+        services.AddScoped<IChallengeParticipationRepository, ChallengeParticipationRepository>();
+        services.AddScoped<IFriendshipRepository, FriendshipRepository>();
         return services;
     }
 }

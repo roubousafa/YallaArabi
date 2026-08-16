@@ -7,17 +7,22 @@ namespace YallaArabi.Application.Features.Levels.CompleteLesson;
 
 public sealed class CompleteLessonCommandHandler : IRequestHandler<CompleteLessonCommand, Result<CompleteLessonResponse>>
 {
+    private const string LessonCompletedActionKey = "lesson_completed";
+
     private readonly ILessonRepository _lessonRepository;
     private readonly IStudentLessonProgressRepository _progressRepository;
+    private readonly IPointsService _pointsService;
     private readonly ICurrentUserService _currentUserService;
 
     public CompleteLessonCommandHandler(
         ILessonRepository lessonRepository,
         IStudentLessonProgressRepository progressRepository,
+        IPointsService pointsService,
         ICurrentUserService currentUserService)
     {
         _lessonRepository = lessonRepository;
         _progressRepository = progressRepository;
+        _pointsService = pointsService;
         _currentUserService = currentUserService;
     }
 
@@ -48,6 +53,12 @@ public sealed class CompleteLessonCommandHandler : IRequestHandler<CompleteLesso
         await _progressRepository.AddAsync(progress, cancellationToken);
         await _progressRepository.SaveChangesAsync(cancellationToken);
 
-        return Result<CompleteLessonResponse>.Success(new CompleteLessonResponse(lesson.Id, lesson.PointsReward, false));
+        var pointsEarned = await _pointsService.AwardPointsAsync(
+            currentUserId.Value,
+            LessonCompletedActionKey,
+            lesson.Id,
+            ct: cancellationToken);
+
+        return Result<CompleteLessonResponse>.Success(new CompleteLessonResponse(lesson.Id, pointsEarned, false));
     }
 }

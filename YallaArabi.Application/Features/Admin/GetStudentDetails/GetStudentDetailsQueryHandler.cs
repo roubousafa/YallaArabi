@@ -14,6 +14,7 @@ public sealed class GetStudentDetailsQueryHandler : IRequestHandler<GetStudentDe
     private readonly IWordReviewRepository _wordReviewRepository;
     private readonly ILessonRepository _lessonRepository;
     private readonly IWordRepository _wordRepository;
+    private readonly IPointsService _pointsService;
 
     public GetStudentDetailsQueryHandler(
         IUserRepository userRepository,
@@ -23,7 +24,8 @@ public sealed class GetStudentDetailsQueryHandler : IRequestHandler<GetStudentDe
         ISavedWordRepository savedWordRepository,
         IWordReviewRepository wordReviewRepository,
         ILessonRepository lessonRepository,
-        IWordRepository wordRepository)
+        IWordRepository wordRepository,
+        IPointsService pointsService)
     {
         _userRepository = userRepository;
         _levelRepository = levelRepository;
@@ -33,6 +35,8 @@ public sealed class GetStudentDetailsQueryHandler : IRequestHandler<GetStudentDe
         _wordReviewRepository = wordReviewRepository;
         _lessonRepository = lessonRepository;
         _wordRepository = wordRepository;
+        _pointsService = pointsService;
+        _pointsService = pointsService;
     }
 
     public async ValueTask<Result<StudentDetailsResponse>> Handle(GetStudentDetailsQuery request, CancellationToken cancellationToken)
@@ -64,16 +68,7 @@ public sealed class GetStudentDetailsQueryHandler : IRequestHandler<GetStudentDe
             isSubscriptionActive ? activeSubscription!.ExpiresAt : null);
 
         var completedProgress = await _progressRepository.GetByUserIdAsync(request.UserId, cancellationToken);
-        var totalPoints = 0;
-
-        foreach (var progress in completedProgress)
-        {
-            var lesson = await _lessonRepository.GetByIdAsync(progress.LessonId, cancellationToken);
-            if (lesson is not null)
-            {
-                totalPoints += lesson.PointsReward;
-            }
-        }
+        var totalPoints = await _pointsService.GetTotalPointsAsync(request.UserId, cancellationToken);
 
         var savedWords = await _savedWordRepository.GetByUserIdAsync(request.UserId, cancellationToken);
         var dueReviews = await _wordReviewRepository.GetDueReviewsAsync(request.UserId, DateTime.UtcNow.AddYears(100), cancellationToken);

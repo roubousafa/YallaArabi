@@ -1,19 +1,23 @@
 ﻿using Mediator;
 using YallaArabi.Application.Common;
 using YallaArabi.Application.Interfaces;
+using YallaArabi.Domain.Entities;
 
 namespace YallaArabi.Application.Features.Reviews.SubmitReview;
 
 public sealed class SubmitReviewCommandHandler : IRequestHandler<SubmitReviewCommand, Result<SubmitReviewResponse>>
 {
     private readonly IWordReviewRepository _wordReviewRepository;
+    private readonly IPointsService _pointsService;
     private readonly ICurrentUserService _currentUserService;
 
     public SubmitReviewCommandHandler(
         IWordReviewRepository wordReviewRepository,
+        IPointsService pointsService,
         ICurrentUserService currentUserService)
     {
         _wordReviewRepository = wordReviewRepository;
+        _pointsService = pointsService;
         _currentUserService = currentUserService;
     }
 
@@ -36,6 +40,20 @@ public sealed class SubmitReviewCommandHandler : IRequestHandler<SubmitReviewCom
         review.ApplyReview(request.Grade);
         await _wordReviewRepository.SaveChangesAsync(cancellationToken);
 
-        return Result<SubmitReviewResponse>.Success(new SubmitReviewResponse(review.WordId, review.IntervalDays, review.NextReviewAt));
+        var actionKey = request.Grade switch
+        {
+            ReviewGrade.Easy => "word_reviewed_easy",
+            ReviewGrade.Medium => "word_reviewed_medium",
+            ReviewGrade.Hard => "word_reviewed_hard",
+            _ => "word_reviewed_medium"
+        };
+
+        var pointsEarned = await _pointsService.AwardPointsAsync(
+           currentUserId.Value,
+           actionKey,
+           ct: cancellationToken);
+
+        return Result<SubmitReviewResponse>.Success(
+            new SubmitReviewResponse(review.WordId, review.IntervalDays, review.NextReviewAt, pointsEarned));
     }
 }

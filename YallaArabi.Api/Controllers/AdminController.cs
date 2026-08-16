@@ -22,6 +22,17 @@ using YallaArabi.Application.Features.Admin.GrantSubscription;
 using YallaArabi.Application.Features.Admin.CancelSubscription;
 using YallaArabi.Application.Features.Admin.SendCustomNotification;
 using YallaArabi.Application.Features.Admin.GetNotificationsList;
+using YallaArabi.Application.Features.Admin.GetPointRules;
+using YallaArabi.Application.Features.Admin.AddPointRule;
+using YallaArabi.Application.Features.Admin.UpdatePointRule;
+using YallaArabi.Application.Features.Admin.CreateChallenge;
+using YallaArabi.Application.Features.Admin.UpdateChallenge;
+using YallaArabi.Application.Features.Admin.DeleteChallenge;
+using YallaArabi.Application.Features.Admin.PublishChallenge;
+using YallaArabi.Application.Features.Admin.GetChallengesList;
+using YallaArabi.Application.Features.Admin.GetChallengeDetails;
+using YallaArabi.Application.Features.Admin.AddChallengeQuestion;
+using YallaArabi.Application.Features.Admin.DeleteChallengeQuestion;
 
 namespace YallaArabi.Api.Controllers;
 
@@ -274,6 +285,140 @@ public class AdminController : ControllerBase
             ? Ok(ApiResponse<SendCustomNotificationResponse>.Ok(result.Value!))
             : BadRequest(ApiResponse<SendCustomNotificationResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
+
+    [HttpGet("point-rules")]
+    public async Task<IActionResult> GetPointRules(CancellationToken ct)
+    {
+        var result = await _sender.Send(new GetPointRulesQuery(), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<IReadOnlyList<PointRuleItem>>.Ok(result.Value!))
+            : BadRequest(ApiResponse<IReadOnlyList<PointRuleItem>>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpPost("point-rules")]
+    public async Task<IActionResult> AddPointRule(AddPointRuleCommand command, CancellationToken ct)
+    {
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<AddPointRuleResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<AddPointRuleResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpPut("point-rules/{ruleId}")]
+    public async Task<IActionResult> UpdatePointRule(Guid ruleId, [FromBody] UpdatePointRuleBody body, CancellationToken ct)
+    {
+        var command = new UpdatePointRuleCommand(ruleId, body.DisplayName, body.Description, body.Points, body.IsActive);
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<UpdatePointRuleResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<UpdatePointRuleResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpGet("challenges")]
+    public async Task<IActionResult> GetChallenges(
+        [FromQuery] string? status,
+        [FromQuery] string? levelCode,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken ct = default)
+    {
+        var result = await _sender.Send(new GetChallengesListQuery(status, levelCode, pageNumber, pageSize), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<PagedChallengesResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<PagedChallengesResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpGet("challenges/{challengeId}")]
+    public async Task<IActionResult> GetChallengeDetails(Guid challengeId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new GetChallengeDetailsQuery(challengeId), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<ChallengeDetailsResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<ChallengeDetailsResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpPost("challenges")]
+    public async Task<IActionResult> CreateChallenge(CreateChallengeCommand command, CancellationToken ct)
+    {
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<CreateChallengeResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<CreateChallengeResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpPut("challenges/{challengeId}")]
+    public async Task<IActionResult> UpdateChallenge(Guid challengeId, [FromBody] UpdateChallengeBody body, CancellationToken ct)
+    {
+        var command = new UpdateChallengeCommand(
+            challengeId,
+            body.Title,
+            body.Description,
+            body.LevelCode,
+            body.PointsReward,
+            body.TimeLimitSeconds,
+            body.ExpiresAt);
+
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(new { message = "Challenge updated successfully." }))
+            : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpPost("challenges/{challengeId}/publish")]
+    public async Task<IActionResult> PublishChallenge(Guid challengeId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new PublishChallengeCommand(challengeId), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(new { message = "Challenge published successfully." }))
+            : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpDelete("challenges/{challengeId}")]
+    public async Task<IActionResult> DeleteChallenge(Guid challengeId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new DeleteChallengeCommand(challengeId), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(new { message = "Challenge deleted successfully." }))
+            : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpPost("challenges/{challengeId}/questions")]
+    public async Task<IActionResult> AddChallengeQuestion(Guid challengeId, [FromBody] AddQuestionBody body, CancellationToken ct)
+    {
+        var command = new AddChallengeQuestionCommand(
+            challengeId,
+            body.QuestionText,
+            body.OptionA,
+            body.OptionB,
+            body.OptionC,
+            body.OptionD,
+            body.CorrectOption);
+
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<AddChallengeQuestionResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<AddChallengeQuestionResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpDelete("challenges/questions/{questionId}")]
+    public async Task<IActionResult> DeleteChallengeQuestion(Guid questionId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new DeleteChallengeQuestionCommand(questionId), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(new { message = "Question deleted successfully." }))
+            : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
 }
 
 public sealed record UpdateWordBody(
@@ -288,3 +433,22 @@ public sealed record UpdateWordBody(
 public sealed record UpdateLevelBody(string Name, int OrderIndex);
 
 public sealed record UpdateUserBody(string FullName, string Role, string? LevelCode);
+
+public sealed record UpdatePointRuleBody(string DisplayName, string? Description, int Points, bool IsActive);
+public sealed record UpdateChallengeBody(
+    string Title,
+    string? Description,
+    string? LevelCode,
+    int PointsReward,
+    int TimeLimitSeconds,
+    DateTime? ExpiresAt
+);
+
+public sealed record AddQuestionBody(
+    string QuestionText,
+    string OptionA,
+    string OptionB,
+    string? OptionC,
+    string? OptionD,
+    string CorrectOption
+);

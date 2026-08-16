@@ -18,6 +18,12 @@ public class AppDbContext : DbContext
     public DbSet<WordReview> WordReviews => Set<WordReview>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<PointRule> PointRules => Set<PointRule>();
+    public DbSet<PointTransaction> PointTransactions => Set<PointTransaction>();
+    public DbSet<Challenge> Challenges => Set<Challenge>();
+    public DbSet<ChallengeQuestion> ChallengeQuestions => Set<ChallengeQuestion>();
+    public DbSet<ChallengeParticipation> ChallengeParticipations => Set<ChallengeParticipation>();
+    public DbSet<Friendship> Friendships => Set<Friendship>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
