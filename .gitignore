@@ -6,3 +6,4 @@ appsettings.Local.json
 appsettings.*.Local.json
 appsettings.Development.json
 appsettings.Production.json
+firebase-service-account.json

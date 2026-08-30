@@ -33,6 +33,16 @@ using YallaArabi.Application.Features.Admin.GetChallengesList;
 using YallaArabi.Application.Features.Admin.GetChallengeDetails;
 using YallaArabi.Application.Features.Admin.AddChallengeQuestion;
 using YallaArabi.Application.Features.Admin.DeleteChallengeQuestion;
+using YallaArabi.Application.Features.Admin.GetCategories;
+using YallaArabi.Application.Features.Admin.CreateCategory;
+using YallaArabi.Application.Features.Admin.UpdateCategory;
+using YallaArabi.Application.Features.Admin.DeleteCategory;
+using YallaArabi.Application.Features.Admin.ForcePasswordReset;
+using YallaArabi.Application.Features.Admin.UpdateChallengeQuestion;
+using YallaArabi.Infrastructure.Storage;
+using Microsoft.Extensions.Options;
+using YallaArabi.Application.Features.Admin.GetChallengeParticipants;
+using YallaArabi.Application.Features.Admin.AssignChallenge;
 
 namespace YallaArabi.Api.Controllers;
 
@@ -401,7 +411,9 @@ public class AdminController : ControllerBase
             body.OptionB,
             body.OptionC,
             body.OptionD,
-            body.CorrectOption);
+            body.CorrectOption,
+            body.AudioUrl,
+            body.ImageUrl);
 
         var result = await _sender.Send(command, ct);
 
@@ -418,6 +430,177 @@ public class AdminController : ControllerBase
         return result.IsSuccess
             ? Ok(ApiResponse<object>.Ok(new { message = "Question deleted successfully." }))
             : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpGet("levels/{levelCode}/categories")]
+    public async Task<IActionResult> GetCategories(string levelCode, CancellationToken ct)
+    {
+        var result = await _sender.Send(new GetCategoriesQuery(levelCode), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<IReadOnlyList<AdminCategoryItem>>.Ok(result.Value!))
+            : BadRequest(ApiResponse<IReadOnlyList<AdminCategoryItem>>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpPost("categories")]
+    public async Task<IActionResult> CreateCategory(CreateCategoryCommand command, CancellationToken ct)
+    {
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<CreateCategoryResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<CreateCategoryResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpPut("categories/{categoryId}")]
+    public async Task<IActionResult> UpdateCategory(Guid categoryId, [FromBody] UpdateCategoryBody body, CancellationToken ct)
+    {
+        var command = new UpdateCategoryCommand(
+            categoryId,
+            body.Name,
+            body.Description,
+            body.IconUrl,
+            body.OrderIndex,
+            body.LevelCode);
+
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(new { message = "Category updated successfully." }))
+            : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpDelete("categories/{categoryId}")]
+    public async Task<IActionResult> DeleteCategory(Guid categoryId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new DeleteCategoryCommand(categoryId), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(new { message = "Category deleted successfully." }))
+            : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpPost("users/force-password-reset")]
+    public async Task<IActionResult> ForcePasswordReset(ForcePasswordResetCommand command, CancellationToken ct)
+    {
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<ForcePasswordResetResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<ForcePasswordResetResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpPost("uploads")]
+    [RequestSizeLimit(15_000_000)]
+    public async Task<IActionResult> UploadFile(
+    IFormFile file,
+    [FromQuery] string type,
+    [FromServices] IFileStorage fileStorage,
+    [FromServices] IOptions<FileStorageOptions> storageOptions,
+    CancellationToken ct)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(ApiResponse<object>.Fail("file_required", "Please select a file to upload."));
+        }
+
+        var normalizedType = (type ?? "").Trim().ToLowerInvariant();
+
+        if (normalizedType is not ("image" or "audio"))
+        {
+            return BadRequest(ApiResponse<object>.Fail("invalid_type", "Type must be either 'image' or 'audio'."));
+        }
+
+        var options = storageOptions.Value;
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+        var allowedImage = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+        var allowedAudio = new[] { ".mp3", ".m4a", ".wav", ".ogg", ".aac", ".webm" };
+
+        if (normalizedType == "image")
+        {
+            if (!allowedImage.Contains(extension))
+            {
+                return BadRequest(ApiResponse<object>.Fail("invalid_extension",
+                    $"Allowed image formats: {string.Join(", ", allowedImage)}"));
+            }
+
+            if (file.Length > options.MaxImageSizeBytes)
+            {
+                return BadRequest(ApiResponse<object>.Fail("file_too_large",
+                    $"Image size cannot exceed {options.MaxImageSizeBytes / 1_000_000} MB."));
+            }
+        }
+        else
+        {
+            if (!allowedAudio.Contains(extension))
+            {
+                return BadRequest(ApiResponse<object>.Fail("invalid_extension",
+                    $"Allowed audio formats: {string.Join(", ", allowedAudio)}"));
+            }
+
+            if (file.Length > options.MaxAudioSizeBytes)
+            {
+                return BadRequest(ApiResponse<object>.Fail("file_too_large",
+                    $"Audio size cannot exceed {options.MaxAudioSizeBytes / 1_000_000} MB."));
+            }
+        }
+
+        var folder = normalizedType == "image" ? "images" : "audio";
+
+        await using var stream = file.OpenReadStream();
+        var result = await fileStorage.UploadAsync(stream, file.FileName, file.ContentType, folder, ct);
+
+        return Ok(ApiResponse<FileUploadResult>.Ok(result));
+    }
+
+    [HttpPut("challenges/questions/{questionId}")]
+    public async Task<IActionResult> UpdateChallengeQuestion(
+    Guid questionId,
+    [FromBody] UpdateQuestionBody body,
+    CancellationToken ct)
+    {
+        var command = new UpdateChallengeQuestionCommand(
+            questionId,
+            body.QuestionText,
+            body.OptionA,
+            body.OptionB,
+            body.OptionC,
+            body.OptionD,
+            body.CorrectOption,
+            body.OrderIndex,
+            body.AudioUrl,
+            body.ImageUrl);
+
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(new { message = "Question updated successfully." }))
+            : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpGet("challenges/{challengeId}/participants")]
+    public async Task<IActionResult> GetChallengeParticipants(Guid challengeId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new GetChallengeParticipantsQuery(challengeId), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<ChallengeParticipantsResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<ChallengeParticipantsResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpPost("challenges/{challengeId}/assign")]
+    public async Task<IActionResult> AssignChallenge(
+    Guid challengeId,
+    [FromBody] AssignChallengeBody body,
+    CancellationToken ct)
+    {
+        var command = new AssignChallengeCommand(challengeId, body.UserIds, body.SendNotification);
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<AssignChallengeResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<AssignChallengeResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 }
 
@@ -444,11 +627,39 @@ public sealed record UpdateChallengeBody(
     DateTime? ExpiresAt
 );
 
+
 public sealed record AddQuestionBody(
+   string QuestionText,
+   string OptionA,
+   string OptionB,
+   string? OptionC,
+   string? OptionD,
+   string CorrectOption,
+   string? AudioUrl,
+   string? ImageUrl
+);
+
+public sealed record UpdateCategoryBody(
+    string Name,
+    string? Description,
+    string? IconUrl,
+    int OrderIndex,
+    string? LevelCode
+);
+
+public sealed record UpdateQuestionBody(
     string QuestionText,
     string OptionA,
     string OptionB,
     string? OptionC,
     string? OptionD,
-    string CorrectOption
+    string CorrectOption,
+    int OrderIndex,
+    string? AudioUrl,
+    string? ImageUrl
+);
+
+public sealed record AssignChallengeBody(
+    IReadOnlyList<Guid>? UserIds,
+    bool SendNotification
 );

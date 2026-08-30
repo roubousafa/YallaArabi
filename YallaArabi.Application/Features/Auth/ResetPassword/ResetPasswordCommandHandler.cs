@@ -34,7 +34,7 @@ public sealed class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordC
         var newPasswordHash = _passwordHasher.Hash(request.NewPassword);
         user.ChangePasswordHash(newPasswordHash);
         user.ClearPasswordResetToken();
-
+        user.ClearPasswordChangeRequirement();
         await _userRepository.SaveChangesAsync(cancellationToken);
 
         return Result<Unit>.Success(Unit.Value);

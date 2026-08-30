@@ -19,5 +19,11 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
             .IsRequired();
 
         builder.HasIndex(c => c.LevelId);
+
+        builder.Property(c => c.Description)
+           .HasMaxLength(300);
+
+        builder.Property(c => c.IconUrl)
+            .HasMaxLength(500);
     }
 }

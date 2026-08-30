@@ -75,14 +75,16 @@ public sealed class StartChallengeCommandHandler : IRequestHandler<StartChalleng
         }
 
         var questionItems = questions
-            .Select(q => new StudentQuestionItem(
+           .Select(q => new StudentQuestionItem(
                 q.Id,
                 q.QuestionText,
                 q.OptionA,
                 q.OptionB,
                 q.OptionC,
                 q.OptionD,
-                q.OrderIndex))
+                q.OrderIndex,
+                q.AudioUrl,
+                q.ImageUrl))
             .ToList();
 
         var response = new StartChallengeResponse(

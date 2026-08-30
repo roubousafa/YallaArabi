@@ -46,7 +46,9 @@ public sealed class AddChallengeQuestionCommandHandler : IRequestHandler<AddChal
             request.OptionC,
             request.OptionD,
             request.CorrectOption,
-            currentCount);
+            currentCount,
+            request.AudioUrl,
+            request.ImageUrl);
 
         await _questionRepository.AddAsync(question, cancellationToken);
         await _questionRepository.SaveChangesAsync(cancellationToken);

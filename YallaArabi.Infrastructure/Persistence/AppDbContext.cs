@@ -25,6 +25,8 @@ public class AppDbContext : DbContext
     public DbSet<ChallengeParticipation> ChallengeParticipations => Set<ChallengeParticipation>();
     public DbSet<Friendship> Friendships => Set<Friendship>();
 
+    public DbSet<ChallengeAssignment> ChallengeAssignments => Set<ChallengeAssignment>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);

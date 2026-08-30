@@ -22,5 +22,7 @@ public sealed record StudentQuestionItem(
     string OptionB,
     string? OptionC,
     string? OptionD,
-    int OrderIndex
+    int OrderIndex,
+    string? AudioUrl,
+    string? ImageUrl
 );

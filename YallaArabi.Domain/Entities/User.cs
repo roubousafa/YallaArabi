@@ -19,7 +19,7 @@ public sealed class User : AggregateRoot
     public string? LearningMotivation { get; private set; }
     public string? FcmToken { get; private set; }
     public string Role { get; private set; } = "Student";
-
+    public bool MustChangePassword { get; private set; }
     private User() { }
 
     public static User Register(string fullName, string emailValue, string passwordHash)
@@ -181,5 +181,14 @@ public sealed class User : AggregateRoot
 
         FullName = fullName.Trim();
         CurrentLevelId = currentLevelId;
+    }
+    public void RequirePasswordChange()
+    {
+        MustChangePassword = true;
+    }
+
+    public void ClearPasswordChangeRequirement()
+    {
+        MustChangePassword = false;
     }
 }

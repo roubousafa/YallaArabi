@@ -48,7 +48,9 @@ public sealed class GetChallengeDetailsQueryHandler : IRequestHandler<GetChallen
                 q.OptionC,
                 q.OptionD,
                 q.CorrectOption,
-                q.OrderIndex))
+                q.OrderIndex,
+                q.AudioUrl,
+                q.ImageUrl))
             .ToList();
 
         var response = new ChallengeDetailsResponse(

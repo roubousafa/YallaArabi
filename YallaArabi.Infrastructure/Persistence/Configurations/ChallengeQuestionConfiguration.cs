@@ -33,6 +33,12 @@ public class ChallengeQuestionConfiguration : IEntityTypeConfiguration<Challenge
             .HasMaxLength(1)
             .IsRequired();
 
+        builder.Property(q => q.AudioUrl)
+           .HasMaxLength(500);
+
+        builder.Property(q => q.ImageUrl)
+            .HasMaxLength(500);
+
         builder.HasIndex(q => q.ChallengeId);
     }
 }

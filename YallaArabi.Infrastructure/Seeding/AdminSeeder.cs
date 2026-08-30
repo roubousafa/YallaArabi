@@ -13,40 +13,48 @@ public static class AdminSeeder
         using var scope = services.CreateScope();
 
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-        var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
-        var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<object>>();
 
-        var adminEmail = configuration["AdminSeed:Email"];
-        var adminPassword = configuration["AdminSeed:Password"];
-        var adminFullName = configuration["AdminSeed:FullName"] ?? "System Admin";
-
-        if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
+        try
         {
-            logger.LogWarning("AdminSeed configuration is missing. Skipping admin user seeding.");
-            return;
-        }
+            var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
+            var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
 
-        var existingUser = await userRepository.GetByEmailAsync(adminEmail);
+            var adminEmail = configuration["AdminSeed:Email"];
+            var adminPassword = configuration["AdminSeed:Password"];
+            var adminFullName = configuration["AdminSeed:FullName"] ?? "System Admin";
 
-        if (existingUser is not null)
-        {
-            if (existingUser.Role != "Admin")
+            if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
             {
-                existingUser.PromoteToAdmin();
-                await userRepository.SaveChangesAsync();
-                logger.LogInformation("Existing user {Email} promoted to Admin.", adminEmail);
+                logger.LogWarning("AdminSeed configuration is missing. Skipping admin user seeding.");
+                return;
             }
 
-            return;
+            var existingUser = await userRepository.GetByEmailAsync(adminEmail);
+
+            if (existingUser is not null)
+            {
+                if (existingUser.Role != "Admin")
+                {
+                    existingUser.PromoteToAdmin();
+                    await userRepository.SaveChangesAsync();
+                    logger.LogInformation("Existing user {Email} promoted to Admin.", adminEmail);
+                }
+
+                return;
+            }
+
+            var passwordHash = passwordHasher.Hash(adminPassword);
+            var adminUser = User.Register(adminFullName, adminEmail, passwordHash);
+            adminUser.PromoteToAdmin();
+
+            await userRepository.AddAsync(adminUser);
+
+            logger.LogInformation("Admin user {Email} created successfully.", adminEmail);
         }
-
-        var passwordHash = passwordHasher.Hash(adminPassword);
-        var adminUser = User.Register(adminFullName, adminEmail, passwordHash);
-        adminUser.PromoteToAdmin();
-
-        await userRepository.AddAsync(adminUser);
-
-        logger.LogInformation("Admin user {Email} created successfully.", adminEmail);
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Admin seeding failed (database may be unavailable). The application will continue to start.");
+        }
     }
 }

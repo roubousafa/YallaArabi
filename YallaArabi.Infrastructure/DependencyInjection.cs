@@ -12,6 +12,7 @@ using YallaArabi.Infrastructure.Persistence;
 using YallaArabi.Infrastructure.Repositories;
 using YallaArabi.Infrastructure.Security;
 using YallaArabi.Infrastructure.Services;
+using YallaArabi.Infrastructure.Storage;
 
 namespace YallaArabi.Infrastructure;
 
@@ -25,6 +26,7 @@ public static class DependencyInjection
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
         services.Configure<GoogleOptions>(configuration.GetSection("Google"));
         services.Configure<EmailOptions>(configuration.GetSection("Email"));
+        services.Configure<FirebaseOptions>(configuration.GetSection("Firebase"));
 
         services.AddHttpContextAccessor();
 
@@ -42,7 +44,7 @@ public static class DependencyInjection
         services.AddScoped<IWordRepository, WordRepository>();
         services.AddScoped<ISavedWordRepository, SavedWordRepository>();
         services.AddScoped<IWordReviewRepository, WordReviewRepository>();
-        services.AddScoped<IPushNotificationSender, ConsolePushNotificationSender>();
+        services.AddScoped<IPushNotificationSender, FirebasePushNotificationSender>();
         services.AddScoped<IExcelWordParser, ExcelWordParser>();
         services.AddScoped<IPaymentGateway, FakePaymentGateway>();
         services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
@@ -54,6 +56,9 @@ public static class DependencyInjection
         services.AddScoped<IChallengeQuestionRepository, ChallengeQuestionRepository>();
         services.AddScoped<IChallengeParticipationRepository, ChallengeParticipationRepository>();
         services.AddScoped<IFriendshipRepository, FriendshipRepository>();
+        services.Configure<FileStorageOptions>(configuration.GetSection("FileStorage"));
+        services.AddScoped<IFileStorage, LocalFileStorage>();
+        services.AddScoped<IChallengeAssignmentRepository, ChallengeAssignmentRepository>();
         return services;
     }
 }

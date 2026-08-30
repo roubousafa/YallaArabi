@@ -17,7 +17,7 @@ namespace YallaArabi.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.18")
+                .HasAnnotation("ProductVersion", "9.0.19")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -27,6 +27,14 @@ namespace YallaArabi.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("IconUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<Guid>("LevelId")
                         .HasColumnType("uuid");
@@ -93,6 +101,34 @@ namespace YallaArabi.Infrastructure.Migrations
                     b.ToTable("challenges", (string)null);
                 });
 
+            modelBuilder.Entity("YallaArabi.Domain.Entities.ChallengeAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AssignedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("AssignedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ChallengeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("ChallengeId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("challenge_assignments", (string)null);
+                });
+
             modelBuilder.Entity("YallaArabi.Domain.Entities.ChallengeParticipation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -140,6 +176,10 @@ namespace YallaArabi.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AudioUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<Guid>("ChallengeId")
                         .HasColumnType("uuid");
 
@@ -147,6 +187,10 @@ namespace YallaArabi.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(1)
                         .HasColumnType("character varying(1)");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("OptionA")
                         .IsRequired()
@@ -533,6 +577,9 @@ namespace YallaArabi.Infrastructure.Migrations
 
                     b.Property<string>("LearningMotivation")
                         .HasColumnType("text");
+
+                    b.Property<bool>("MustChangePassword")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("text");

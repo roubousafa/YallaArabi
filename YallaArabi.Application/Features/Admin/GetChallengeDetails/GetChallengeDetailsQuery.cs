@@ -26,5 +26,7 @@ public sealed record ChallengeQuestionItem(
     string? OptionC,
     string? OptionD,
     string CorrectOption,
-    int OrderIndex
+    int OrderIndex,
+    string? AudioUrl,
+    string? ImageUrl
 );

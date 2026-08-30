@@ -10,7 +10,9 @@ public sealed record AddChallengeQuestionCommand(
     string OptionB,
     string? OptionC,
     string? OptionD,
-    string CorrectOption
+    string CorrectOption,
+    string? AudioUrl,
+    string? ImageUrl
 ) : IRequest<Result<AddChallengeQuestionResponse>>;
 
 public sealed record AddChallengeQuestionResponse(

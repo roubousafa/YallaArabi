@@ -32,6 +32,13 @@ public sealed class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, 
             return Result<AuthResponse>.Failure("invalid_credentials", "Invalid email or password");
         }
 
+        if (user.MustChangePassword)
+        {
+            return Result<AuthResponse>.Failure(
+                "password_change_required",
+                "You must reset your password before signing in. Please check your email for the reset link.");
+        }
+
         var accessToken = _jwtTokenGenerator.GenerateAccessToken(user);
         var refreshTokenPlain = _jwtTokenGenerator.GenerateRefreshToken();
         var refreshTokenHash = HashToken(refreshTokenPlain);

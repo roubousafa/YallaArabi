@@ -11,6 +11,8 @@ public sealed class ChallengeQuestion : Entity
     public string? OptionC { get; private set; }
     public string? OptionD { get; private set; }
     public string CorrectOption { get; private set; } = default!;
+    public string? AudioUrl { get; private set; }
+    public string? ImageUrl { get; private set; }
     public int OrderIndex { get; private set; }
 
     private ChallengeQuestion() { }
@@ -23,7 +25,9 @@ public sealed class ChallengeQuestion : Entity
         string? optionC,
         string? optionD,
         string correctOption,
-        int orderIndex)
+        int orderIndex,
+        string? audioUrl = null,
+        string? imageUrl = null)
     {
         if (string.IsNullOrWhiteSpace(questionText))
             throw new ArgumentException("Question text is required", nameof(questionText));
@@ -55,7 +59,9 @@ public sealed class ChallengeQuestion : Entity
             OptionC = optionC?.Trim(),
             OptionD = optionD?.Trim(),
             CorrectOption = normalizedCorrect,
-            OrderIndex = orderIndex
+            OrderIndex = orderIndex,
+            AudioUrl = audioUrl?.Trim(),
+            ImageUrl = imageUrl?.Trim()
         };
     }
 
@@ -66,7 +72,9 @@ public sealed class ChallengeQuestion : Entity
         string? optionC,
         string? optionD,
         string correctOption,
-        int orderIndex)
+        int orderIndex,
+        string? audioUrl = null,
+        string? imageUrl = null)
     {
         if (string.IsNullOrWhiteSpace(questionText))
             throw new ArgumentException("Question text is required", nameof(questionText));
@@ -89,6 +97,8 @@ public sealed class ChallengeQuestion : Entity
         OptionD = optionD?.Trim();
         CorrectOption = normalizedCorrect;
         OrderIndex = orderIndex;
+        AudioUrl = audioUrl?.Trim();
+        ImageUrl = imageUrl?.Trim();
     }
 
     public bool IsCorrectAnswer(string selectedOption) =>

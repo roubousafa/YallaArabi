@@ -40,22 +40,15 @@ public class ChallengeRepository : IChallengeRepository
         return (items, totalCount);
     }
 
-    public async Task<IReadOnlyList<Challenge>> GetAvailableForLevelAsync(Guid? levelId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<Challenge>> GetAvailableForLevelsAsync(
+      IReadOnlyList<Guid> allowedLevelIds, CancellationToken ct = default)
     {
         var now = DateTime.UtcNow;
 
         var query = _context.Challenges
             .Where(c => c.Status == "published")
-            .Where(c => c.ExpiresAt == null || c.ExpiresAt > now);
-
-        if (levelId.HasValue)
-        {
-            query = query.Where(c => c.LevelId == null || c.LevelId == levelId.Value);
-        }
-        else
-        {
-            query = query.Where(c => c.LevelId == null);
-        }
+            .Where(c => c.ExpiresAt == null || c.ExpiresAt > now)
+            .Where(c => c.LevelId == null || allowedLevelIds.Contains(c.LevelId.Value));
 
         return await query.OrderByDescending(c => c.CreatedAt).ToListAsync(ct);
     }

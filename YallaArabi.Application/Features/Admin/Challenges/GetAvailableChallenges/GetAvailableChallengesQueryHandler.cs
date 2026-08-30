@@ -10,20 +10,26 @@ public sealed class GetAvailableChallengesQueryHandler : IRequestHandler<GetAvai
     private readonly IChallengeQuestionRepository _questionRepository;
     private readonly IChallengeParticipationRepository _participationRepository;
     private readonly IUserRepository _userRepository;
+    private readonly ILevelRepository _levelRepository;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IChallengeAssignmentRepository _assignmentRepository;
 
     public GetAvailableChallengesQueryHandler(
         IChallengeRepository challengeRepository,
         IChallengeQuestionRepository questionRepository,
         IChallengeParticipationRepository participationRepository,
         IUserRepository userRepository,
+         ILevelRepository levelRepository,
+         IChallengeAssignmentRepository assignmentRepository,
         ICurrentUserService currentUserService)
     {
         _challengeRepository = challengeRepository;
         _questionRepository = questionRepository;
         _participationRepository = participationRepository;
         _userRepository = userRepository;
+        _levelRepository = levelRepository;
         _currentUserService = currentUserService;
+        _assignmentRepository = assignmentRepository;
     }
 
     public async ValueTask<Result<IReadOnlyList<AvailableChallengeItem>>> Handle(GetAvailableChallengesQuery request, CancellationToken cancellationToken)
@@ -42,7 +48,23 @@ public sealed class GetAvailableChallengesQueryHandler : IRequestHandler<GetAvai
             return Result<IReadOnlyList<AvailableChallengeItem>>.Failure("user_not_found", "User not found");
         }
 
-        var challenges = await _challengeRepository.GetAvailableForLevelAsync(user.CurrentLevelId, cancellationToken);
+        var allLevels = await _levelRepository.GetAllAsync(cancellationToken);
+        var allowedLevelIds = new List<Guid>();
+
+        if (user.CurrentLevelId.HasValue)
+        {
+            var currentLevel = allLevels.FirstOrDefault(l => l.Id == user.CurrentLevelId.Value);
+
+            if (currentLevel is not null)
+            {
+                allowedLevelIds = allLevels
+                    .Where(l => l.OrderIndex <= currentLevel.OrderIndex)
+                    .Select(l => l.Id)
+                    .ToList();
+            }
+        }
+
+        var challenges = await _challengeRepository.GetAvailableForLevelsAsync(allowedLevelIds, cancellationToken);
         var myParticipations = await _participationRepository.GetByUserIdAsync(currentUserId.Value, cancellationToken);
 
         var results = new List<AvailableChallengeItem>();
