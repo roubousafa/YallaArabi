@@ -40,7 +40,7 @@ public sealed class GetUsersListQueryHandler : IRequestHandler<GetUsersListQuery
         }
 
         var (items, totalCount) = await _userRepository.GetPagedAsync(
-            request.SearchTerm, request.Role, levelId, pageNumber, pageSize, cancellationToken);
+      request.SearchTerm, levelId, pageNumber, pageSize, cancellationToken);
 
         var results = items
             .Select(u => new AdminUserItem(

@@ -12,6 +12,33 @@ public class UserRepository : IUserRepository
 
     public UserRepository(AppDbContext context) => _context = context;
 
+    public async Task<(IReadOnlyList<User> Items, int TotalCount)> GetPagedTeamAsync(
+    string? searchTerm, Guid? roleId, int pageNumber, int pageSize, CancellationToken ct = default)
+    {
+        var query = _context.Users.Where(u => u.Role == "Admin");
+
+        if (roleId.HasValue)
+        {
+            query = query.Where(u => u.RoleId == roleId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var pattern = $"%{searchTerm.Trim()}%";
+            query = query.Where(u => EF.Functions.Like(u.FullName, pattern));
+        }
+
+        var totalCount = await query.CountAsync(ct);
+
+        var items = await query
+            .OrderByDescending(u => u.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        return (items, totalCount);
+    }
+
     public async Task<User?> GetByEmailAsync(string email, CancellationToken ct = default)
     {
         var emailVo = Email.Create(email);
@@ -40,14 +67,9 @@ public class UserRepository : IUserRepository
         await _context.SaveChangesAsync(ct);
 
     public async Task<(IReadOnlyList<User> Items, int TotalCount)> GetPagedAsync(
-        string? searchTerm, string? role, Guid? levelId, int pageNumber, int pageSize, CancellationToken ct = default)
+     string? searchTerm, Guid? levelId, int pageNumber, int pageSize, CancellationToken ct = default)
     {
-        var query = _context.Users.AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(role))
-        {
-            query = query.Where(u => u.Role == role);
-        }
+        var query = _context.Users.Where(u => u.Role == "Student");
 
         if (levelId.HasValue)
         {

@@ -14,9 +14,12 @@ using YallaArabi.Application.Features.Admin.UpdateLevel;
 using YallaArabi.Application.Features.Admin.DeleteLevel;
 using YallaArabi.Application.Features.Admin.GetUsersList;
 using YallaArabi.Application.Features.Admin.GetStudentDetails;
-using YallaArabi.Application.Features.Admin.CreateUser;
-using YallaArabi.Application.Features.Admin.UpdateUser;
-using YallaArabi.Application.Features.Admin.DeleteUser;
+using YallaArabi.Application.Features.Admin.GetTeamList;
+using YallaArabi.Application.Features.Admin.CreateTeamMember;
+using YallaArabi.Application.Features.Admin.UpdateTeamMember;
+using YallaArabi.Application.Features.Admin.DeleteTeamMember;
+using YallaArabi.Application.Features.Admin.UpdateStudent;
+using YallaArabi.Application.Features.Admin.DeleteStudent;
 using YallaArabi.Application.Features.Admin.GetSubscriptionsList;
 using YallaArabi.Application.Features.Admin.GrantSubscription;
 using YallaArabi.Application.Features.Admin.CancelSubscription;
@@ -43,24 +46,34 @@ using YallaArabi.Infrastructure.Storage;
 using Microsoft.Extensions.Options;
 using YallaArabi.Application.Features.Admin.GetChallengeParticipants;
 using YallaArabi.Application.Features.Admin.AssignChallenge;
+using YallaArabi.Application.Features.Admin.GetPermissions;
+using YallaArabi.Application.Features.Admin.GetRoles;
+using YallaArabi.Application.Features.Admin.CreateRole;
+using YallaArabi.Application.Features.Admin.UpdateRole;
+using YallaArabi.Application.Features.Admin.DeleteRole;
+using YallaArabi.Application.Features.Admin.AssignUserRole;
+using YallaArabi.Api.Authorization;
+using YallaArabi.Domain.Common;
 
 namespace YallaArabi.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/admin")]
-[Authorize(Roles = "Admin")]
+[Authorize]
 public class AdminController : ControllerBase
 {
     private readonly ISender _sender;
 
     public AdminController(ISender sender) => _sender = sender;
 
+    [HasPermission(Permissions.Dashboard.View)]
     [HttpGet("ping")]
     public IActionResult Ping()
     {
         return Ok(ApiResponse<object>.Ok(new { message = "You are an authenticated Admin! 🎉" }));
     }
 
+    [HasPermission(Permissions.Words.View)]
     [HttpGet("words")]
     public async Task<IActionResult> GetWords(
         [FromQuery] string? searchTerm,
@@ -76,6 +89,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<PagedWordsResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Words.Create)]
     [HttpPost("words")]
     public async Task<IActionResult> AddWord(AddWordCommand command, CancellationToken ct)
     {
@@ -86,6 +100,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<AddWordResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Words.Edit)]
     [HttpPut("words/{wordId}")]
     public async Task<IActionResult> UpdateWord(Guid wordId, [FromBody] UpdateWordBody body, CancellationToken ct)
     {
@@ -105,6 +120,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<UpdateWordResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Words.Delete)]
     [HttpDelete("words/{wordId}")]
     public async Task<IActionResult> DeleteWord(Guid wordId, CancellationToken ct)
     {
@@ -115,6 +131,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Words.Import)]
     [HttpGet("words/excel-template")]
     public IActionResult DownloadExcelTemplate([FromServices] IExcelTemplateGenerator generator)
     {
@@ -126,6 +143,7 @@ public class AdminController : ControllerBase
             "YallaArabi-Words-Template.xlsx");
     }
 
+    [HasPermission(Permissions.Words.Import)]
     [HttpPost("words/bulk-import")]
     [RequestSizeLimit(10_000_000)]
     public async Task<IActionResult> BulkImportWords(IFormFile file, CancellationToken ct)
@@ -141,6 +159,7 @@ public class AdminController : ControllerBase
         return Ok(ApiResponse<BulkImportResult>.Ok(result));
     }
 
+    [HasPermission(Permissions.Levels.View)]
     [HttpGet("levels")]
     public async Task<IActionResult> GetLevels(CancellationToken ct)
     {
@@ -151,6 +170,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<IReadOnlyList<AdminLevelItem>>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Levels.Create)]
     [HttpPost("levels")]
     public async Task<IActionResult> AddLevel(AddLevelCommand command, CancellationToken ct)
     {
@@ -161,6 +181,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<AddLevelResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Levels.Edit)]
     [HttpPut("levels/{levelId}")]
     public async Task<IActionResult> UpdateLevel(Guid levelId, [FromBody] UpdateLevelBody body, CancellationToken ct)
     {
@@ -172,6 +193,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<UpdateLevelResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Levels.Delete)]
     [HttpDelete("levels/{levelId}")]
     public async Task<IActionResult> DeleteLevel(Guid levelId, CancellationToken ct)
     {
@@ -182,6 +204,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Students.View)]
     [HttpGet("users")]
     public async Task<IActionResult> GetUsers(
         [FromQuery] string? searchTerm,
@@ -198,6 +221,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<PagedUsersResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Students.View)]
     [HttpGet("users/{userId}")]
     public async Task<IActionResult> GetStudentDetails(Guid userId, CancellationToken ct)
     {
@@ -208,37 +232,80 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<StudentDetailsResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
-    [HttpPost("users")]
-    public async Task<IActionResult> CreateUser(CreateUserCommand command, CancellationToken ct)
+    [HasPermission(Permissions.Students.Edit)]
+    [HttpPut("students/{userId}")]
+    public async Task<IActionResult> UpdateStudent(Guid userId, [FromBody] UpdateStudentBody body, CancellationToken ct)
     {
+        var command = new UpdateStudentCommand(userId, body.FullName, body.LevelCode);
         var result = await _sender.Send(command, ct);
 
         return result.IsSuccess
-            ? Ok(ApiResponse<CreateUserResponse>.Ok(result.Value!))
-            : BadRequest(ApiResponse<CreateUserResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
-    }
-
-    [HttpPut("users/{userId}")]
-    public async Task<IActionResult> UpdateUser(Guid userId, [FromBody] UpdateUserBody body, CancellationToken ct)
-    {
-        var command = new UpdateUserCommand(userId, body.FullName, body.Role, body.LevelCode);
-        var result = await _sender.Send(command, ct);
-
-        return result.IsSuccess
-            ? Ok(ApiResponse<UpdateUserResponse>.Ok(result.Value!))
-            : BadRequest(ApiResponse<UpdateUserResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
-    }
-
-    [HttpDelete("users/{userId}")]
-    public async Task<IActionResult> DeleteUser(Guid userId, CancellationToken ct)
-    {
-        var result = await _sender.Send(new DeleteUserCommand(userId), ct);
-
-        return result.IsSuccess
-            ? Ok(ApiResponse<object>.Ok(new { message = "User deleted successfully." }))
+            ? Ok(ApiResponse<object>.Ok(new { message = "Student updated successfully." }))
             : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Students.Delete)]
+    [HttpDelete("students/{userId}")]
+    public async Task<IActionResult> DeleteStudent(Guid userId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new DeleteStudentCommand(userId), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(new { message = "Student deleted successfully." }))
+            : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Users.View)]
+    [HttpGet("team")]
+    public async Task<IActionResult> GetTeam(
+        [FromQuery] string? searchTerm,
+        [FromQuery] Guid? roleId,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken ct = default)
+    {
+        var result = await _sender.Send(new GetTeamListQuery(searchTerm, roleId, pageNumber, pageSize), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<PagedTeamResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<PagedTeamResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Users.Create)]
+    [HttpPost("team")]
+    public async Task<IActionResult> CreateTeamMember(CreateTeamMemberCommand command, CancellationToken ct)
+    {
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<CreateTeamMemberResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<CreateTeamMemberResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Users.Edit)]
+    [HttpPut("team/{userId}")]
+    public async Task<IActionResult> UpdateTeamMember(Guid userId, [FromBody] UpdateTeamMemberBody body, CancellationToken ct)
+    {
+        var command = new UpdateTeamMemberCommand(userId, body.FullName, body.RoleId);
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(new { message = "Team member updated successfully." }))
+            : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Users.Delete)]
+    [HttpDelete("team/{userId}")]
+    public async Task<IActionResult> DeleteTeamMember(Guid userId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new DeleteTeamMemberCommand(userId), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(new { message = "Team member deleted successfully." }))
+            : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Subscriptions.View)]
     [HttpGet("subscriptions")]
     public async Task<IActionResult> GetSubscriptions(
         [FromQuery] string? status,
@@ -253,6 +320,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<PagedSubscriptionsResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Subscriptions.Grant)]
     [HttpPost("subscriptions/grant")]
     public async Task<IActionResult> GrantSubscription(GrantSubscriptionCommand command, CancellationToken ct)
     {
@@ -263,6 +331,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<GrantSubscriptionResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Subscriptions.Cancel)]
     [HttpPost("subscriptions/{subscriptionId}/cancel")]
     public async Task<IActionResult> CancelSubscription(Guid subscriptionId, CancellationToken ct)
     {
@@ -273,6 +342,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Notifications.View)]
     [HttpGet("notifications")]
     public async Task<IActionResult> GetNotifications(
         [FromQuery] int pageNumber = 1,
@@ -286,6 +356,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<PagedNotificationsResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Notifications.Send)]
     [HttpPost("notifications/send")]
     public async Task<IActionResult> SendNotification(SendCustomNotificationCommand command, CancellationToken ct)
     {
@@ -296,6 +367,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<SendCustomNotificationResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.PointRules.View)]
     [HttpGet("point-rules")]
     public async Task<IActionResult> GetPointRules(CancellationToken ct)
     {
@@ -306,6 +378,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<IReadOnlyList<PointRuleItem>>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.PointRules.Create)]
     [HttpPost("point-rules")]
     public async Task<IActionResult> AddPointRule(AddPointRuleCommand command, CancellationToken ct)
     {
@@ -316,6 +389,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<AddPointRuleResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.PointRules.Edit)]
     [HttpPut("point-rules/{ruleId}")]
     public async Task<IActionResult> UpdatePointRule(Guid ruleId, [FromBody] UpdatePointRuleBody body, CancellationToken ct)
     {
@@ -327,6 +401,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<UpdatePointRuleResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Challenges.View)]
     [HttpGet("challenges")]
     public async Task<IActionResult> GetChallenges(
         [FromQuery] string? status,
@@ -342,6 +417,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<PagedChallengesResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Challenges.View)]
     [HttpGet("challenges/{challengeId}")]
     public async Task<IActionResult> GetChallengeDetails(Guid challengeId, CancellationToken ct)
     {
@@ -352,6 +428,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<ChallengeDetailsResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Challenges.Create)]
     [HttpPost("challenges")]
     public async Task<IActionResult> CreateChallenge(CreateChallengeCommand command, CancellationToken ct)
     {
@@ -362,6 +439,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<CreateChallengeResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Challenges.Edit)]
     [HttpPut("challenges/{challengeId}")]
     public async Task<IActionResult> UpdateChallenge(Guid challengeId, [FromBody] UpdateChallengeBody body, CancellationToken ct)
     {
@@ -381,6 +459,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Challenges.Publish)]
     [HttpPost("challenges/{challengeId}/publish")]
     public async Task<IActionResult> PublishChallenge(Guid challengeId, CancellationToken ct)
     {
@@ -391,6 +470,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Challenges.Delete)]
     [HttpDelete("challenges/{challengeId}")]
     public async Task<IActionResult> DeleteChallenge(Guid challengeId, CancellationToken ct)
     {
@@ -401,6 +481,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Challenges.Edit)]
     [HttpPost("challenges/{challengeId}/questions")]
     public async Task<IActionResult> AddChallengeQuestion(Guid challengeId, [FromBody] AddQuestionBody body, CancellationToken ct)
     {
@@ -422,6 +503,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<AddChallengeQuestionResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Challenges.Edit)]
     [HttpDelete("challenges/questions/{questionId}")]
     public async Task<IActionResult> DeleteChallengeQuestion(Guid questionId, CancellationToken ct)
     {
@@ -432,6 +514,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Categories.View)]
     [HttpGet("levels/{levelCode}/categories")]
     public async Task<IActionResult> GetCategories(string levelCode, CancellationToken ct)
     {
@@ -442,6 +525,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<IReadOnlyList<AdminCategoryItem>>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Categories.Create)]
     [HttpPost("categories")]
     public async Task<IActionResult> CreateCategory(CreateCategoryCommand command, CancellationToken ct)
     {
@@ -452,6 +536,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<CreateCategoryResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Categories.Edit)]
     [HttpPut("categories/{categoryId}")]
     public async Task<IActionResult> UpdateCategory(Guid categoryId, [FromBody] UpdateCategoryBody body, CancellationToken ct)
     {
@@ -470,6 +555,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Categories.Delete)]
     [HttpDelete("categories/{categoryId}")]
     public async Task<IActionResult> DeleteCategory(Guid categoryId, CancellationToken ct)
     {
@@ -480,6 +566,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Students.ForcePasswordReset)]
     [HttpPost("users/force-password-reset")]
     public async Task<IActionResult> ForcePasswordReset(ForcePasswordResetCommand command, CancellationToken ct)
     {
@@ -490,6 +577,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<ForcePasswordResetResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Uploads.Upload)]
     [HttpPost("uploads")]
     [RequestSizeLimit(15_000_000)]
     public async Task<IActionResult> UploadFile(
@@ -554,6 +642,7 @@ public class AdminController : ControllerBase
         return Ok(ApiResponse<FileUploadResult>.Ok(result));
     }
 
+    [HasPermission(Permissions.Challenges.Edit)]
     [HttpPut("challenges/questions/{questionId}")]
     public async Task<IActionResult> UpdateChallengeQuestion(
     Guid questionId,
@@ -579,6 +668,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Challenges.ViewParticipants)]
     [HttpGet("challenges/{challengeId}/participants")]
     public async Task<IActionResult> GetChallengeParticipants(Guid challengeId, CancellationToken ct)
     {
@@ -589,6 +679,7 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<ChallengeParticipantsResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Challenges.Assign)]
     [HttpPost("challenges/{challengeId}/assign")]
     public async Task<IActionResult> AssignChallenge(
     Guid challengeId,
@@ -601,6 +692,73 @@ public class AdminController : ControllerBase
         return result.IsSuccess
             ? Ok(ApiResponse<AssignChallengeResponse>.Ok(result.Value!))
             : BadRequest(ApiResponse<AssignChallengeResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Roles.View)]
+    [HttpGet("permissions")]
+    public async Task<IActionResult> GetPermissions(CancellationToken ct)
+    {
+        var result = await _sender.Send(new GetPermissionsQuery(), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<IReadOnlyList<PermissionGroupItem>>.Ok(result.Value!))
+            : BadRequest(ApiResponse<IReadOnlyList<PermissionGroupItem>>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Roles.View)]
+    [HttpGet("roles")]
+    public async Task<IActionResult> GetRoles(CancellationToken ct)
+    {
+        var result = await _sender.Send(new GetRolesQuery(), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<IReadOnlyList<RoleItem>>.Ok(result.Value!))
+            : BadRequest(ApiResponse<IReadOnlyList<RoleItem>>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Roles.Create)]
+    [HttpPost("roles")]
+    public async Task<IActionResult> CreateRole(CreateRoleCommand command, CancellationToken ct)
+    {
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<CreateRoleResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<CreateRoleResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Roles.Edit)]
+    [HttpPut("roles/{roleId}")]
+    public async Task<IActionResult> UpdateRole(Guid roleId, [FromBody] UpdateRoleBody body, CancellationToken ct)
+    {
+        var command = new UpdateRoleCommand(roleId, body.NameEn, body.NameAr, body.Description, body.Permissions);
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(new { message = "Role updated successfully." }))
+            : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Roles.Delete)]
+    [HttpDelete("roles/{roleId}")]
+    public async Task<IActionResult> DeleteRole(Guid roleId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new DeleteRoleCommand(roleId), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(new { message = "Role deleted successfully." }))
+            : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Roles.Assign)]
+    [HttpPut("users/{userId}/role")]
+    public async Task<IActionResult> AssignUserRole(Guid userId, [FromBody] AssignRoleBody body, CancellationToken ct)
+    {
+        var result = await _sender.Send(new AssignUserRoleCommand(userId, body.RoleId), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(new { message = "User role updated successfully." }))
+            : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 }
 
@@ -615,9 +773,12 @@ public sealed record UpdateWordBody(
 
 public sealed record UpdateLevelBody(string Name, int OrderIndex);
 
-public sealed record UpdateUserBody(string FullName, string Role, string? LevelCode);
+public sealed record UpdateStudentBody(string FullName, string? LevelCode);
+
+public sealed record UpdateTeamMemberBody(string FullName, Guid RoleId); 
 
 public sealed record UpdatePointRuleBody(string DisplayName, string? Description, int Points, bool IsActive);
+
 public sealed record UpdateChallengeBody(
     string Title,
     string? Description,
@@ -663,3 +824,12 @@ public sealed record AssignChallengeBody(
     IReadOnlyList<Guid>? UserIds,
     bool SendNotification
 );
+
+public sealed record UpdateRoleBody(
+    string NameEn,
+    string NameAr,
+    string? Description,
+    IReadOnlyList<string> Permissions
+);
+
+public sealed record AssignRoleBody(Guid? RoleId);

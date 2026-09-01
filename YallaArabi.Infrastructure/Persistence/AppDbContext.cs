@@ -24,7 +24,8 @@ public class AppDbContext : DbContext
     public DbSet<ChallengeQuestion> ChallengeQuestions => Set<ChallengeQuestion>();
     public DbSet<ChallengeParticipation> ChallengeParticipations => Set<ChallengeParticipation>();
     public DbSet<Friendship> Friendships => Set<Friendship>();
-
+    public DbSet<Role> Roles => Set<Role>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<ChallengeAssignment> ChallengeAssignments => Set<ChallengeAssignment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

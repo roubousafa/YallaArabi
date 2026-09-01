@@ -11,16 +11,19 @@ public sealed class LoginWithGoogleCommandHandler : IRequestHandler<LoginWithGoo
     private readonly IUserRepository _userRepository;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
+    private readonly IRoleRepository _roleRepository;
 
     public LoginWithGoogleCommandHandler(
         IGoogleAuthValidator googleAuthValidator,
         IUserRepository userRepository,
         IRefreshTokenRepository refreshTokenRepository,
+                IRoleRepository roleRepository,
         IJwtTokenGenerator jwtTokenGenerator)
     {
         _googleAuthValidator = googleAuthValidator;
         _userRepository = userRepository;
         _refreshTokenRepository = refreshTokenRepository;
+        _roleRepository = roleRepository;
         _jwtTokenGenerator = jwtTokenGenerator;
     }
 
@@ -51,7 +54,14 @@ public sealed class LoginWithGoogleCommandHandler : IRequestHandler<LoginWithGoo
             }
         }
 
-        var accessToken = _jwtTokenGenerator.GenerateAccessToken(user);
+        IReadOnlyList<string>? permissions = null;
+
+        if (user.RoleId.HasValue)
+        {
+            permissions = await _roleRepository.GetPermissionKeysAsync(user.RoleId.Value, cancellationToken);
+        }
+
+        var accessToken = _jwtTokenGenerator.GenerateAccessToken(user, permissions);
         var refreshTokenPlain = _jwtTokenGenerator.GenerateRefreshToken();
         var refreshTokenHash = HashToken(refreshTokenPlain);
 

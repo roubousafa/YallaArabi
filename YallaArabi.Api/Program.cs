@@ -7,6 +7,8 @@ using YallaArabi.Api.Middleware;
 using YallaArabi.Application;
 using YallaArabi.Infrastructure;
 using YallaArabi.Infrastructure.Seeding;
+using YallaArabi.Api.Authorization;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -67,6 +69,8 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
 var allowedOrigins = builder.Configuration
     .GetSection("Cors:AllowedOrigins")

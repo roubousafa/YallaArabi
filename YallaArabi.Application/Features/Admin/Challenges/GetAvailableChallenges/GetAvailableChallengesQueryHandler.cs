@@ -64,7 +64,15 @@ public sealed class GetAvailableChallengesQueryHandler : IRequestHandler<GetAvai
             }
         }
 
-        var challenges = await _challengeRepository.GetAvailableForLevelsAsync(allowedLevelIds, cancellationToken);
+        var allChallenges = await _challengeRepository.GetAvailableForLevelsAsync(allowedLevelIds, cancellationToken);
+
+        var exclusiveChallengeIds = (await _assignmentRepository.GetChallengeIdsWithAssignmentsAsync(cancellationToken)).ToHashSet();
+        var myAssignedChallengeIds = (await _assignmentRepository.GetAssignedChallengeIdsForUserAsync(currentUserId.Value, cancellationToken)).ToHashSet();
+
+        var challenges = allChallenges
+            .Where(c => !exclusiveChallengeIds.Contains(c.Id) || myAssignedChallengeIds.Contains(c.Id))
+            .ToList();
+
         var myParticipations = await _participationRepository.GetByUserIdAsync(currentUserId.Value, cancellationToken);
 
         var results = new List<AvailableChallengeItem>();

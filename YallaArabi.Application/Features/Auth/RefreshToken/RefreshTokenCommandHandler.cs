@@ -10,14 +10,17 @@ public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCom
     private readonly IUserRepository _userRepository;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
+    private readonly IRoleRepository _roleRepository;
 
     public RefreshTokenCommandHandler(
         IUserRepository userRepository,
         IRefreshTokenRepository refreshTokenRepository,
+                IRoleRepository roleRepository,
         IJwtTokenGenerator jwtTokenGenerator)
     {
         _userRepository = userRepository;
         _refreshTokenRepository = refreshTokenRepository;
+        _roleRepository = roleRepository;
         _jwtTokenGenerator = jwtTokenGenerator;
     }
 
@@ -41,7 +44,14 @@ public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCom
         storedToken.Revoke();
         await _refreshTokenRepository.SaveChangesAsync(cancellationToken);
 
-        var accessToken = _jwtTokenGenerator.GenerateAccessToken(user);
+        IReadOnlyList<string>? permissions = null;
+
+        if (user.RoleId.HasValue)
+        {
+            permissions = await _roleRepository.GetPermissionKeysAsync(user.RoleId.Value, cancellationToken);
+        }
+
+        var accessToken = _jwtTokenGenerator.GenerateAccessToken(user, permissions);
         var newRefreshTokenPlain = _jwtTokenGenerator.GenerateRefreshToken();
         var newRefreshTokenHash = HashToken(newRefreshTokenPlain);
 

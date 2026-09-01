@@ -11,16 +11,19 @@ public sealed class RegisterUserCommandHandler : IRequestHandler<RegisterUserCom
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
+    private readonly IRoleRepository _roleRepository;
 
     public RegisterUserCommandHandler(
         IUserRepository userRepository,
         IRefreshTokenRepository refreshTokenRepository,
         IPasswordHasher passwordHasher,
+                IRoleRepository roleRepository,
         IJwtTokenGenerator jwtTokenGenerator)
     {
         _userRepository = userRepository;
         _refreshTokenRepository = refreshTokenRepository;
         _passwordHasher = passwordHasher;
+        _roleRepository = roleRepository;
         _jwtTokenGenerator = jwtTokenGenerator;
     }
 
@@ -36,7 +39,14 @@ public sealed class RegisterUserCommandHandler : IRequestHandler<RegisterUserCom
 
         await _userRepository.AddAsync(user, cancellationToken);
 
-        var accessToken = _jwtTokenGenerator.GenerateAccessToken(user);
+        IReadOnlyList<string>? permissions = null;
+
+        if (user.RoleId.HasValue)
+        {
+            permissions = await _roleRepository.GetPermissionKeysAsync(user.RoleId.Value, cancellationToken);
+        }
+
+        var accessToken = _jwtTokenGenerator.GenerateAccessToken(user, permissions);
         var refreshTokenPlain = _jwtTokenGenerator.GenerateRefreshToken();
         var refreshTokenHash = HashToken(refreshTokenPlain);
 

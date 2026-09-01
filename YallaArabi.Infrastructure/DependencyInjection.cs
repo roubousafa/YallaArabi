@@ -59,6 +59,7 @@ public static class DependencyInjection
         services.Configure<FileStorageOptions>(configuration.GetSection("FileStorage"));
         services.AddScoped<IFileStorage, LocalFileStorage>();
         services.AddScoped<IChallengeAssignmentRepository, ChallengeAssignmentRepository>();
+        services.AddScoped<IRoleRepository, RoleRepository>();
         return services;
     }
 }

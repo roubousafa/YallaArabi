@@ -462,6 +462,65 @@ namespace YallaArabi.Infrastructure.Migrations
                     b.ToTable("refresh_tokens", (string)null);
                 });
 
+            modelBuilder.Entity("YallaArabi.Domain.Entities.Role", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<bool>("IsSystemRole")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("NameEn")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NameEn")
+                        .IsUnique();
+
+                    b.ToTable("roles", (string)null);
+                });
+
+            modelBuilder.Entity("YallaArabi.Domain.Entities.RolePermission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PermissionKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId", "PermissionKey")
+                        .IsUnique();
+
+                    b.ToTable("role_permissions", (string)null);
+                });
+
             modelBuilder.Entity("YallaArabi.Domain.Entities.SavedWord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -594,6 +653,9 @@ namespace YallaArabi.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("RoleId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("SubscriptionStatus")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -705,6 +767,20 @@ namespace YallaArabi.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("word_reviews", (string)null);
+                });
+
+            modelBuilder.Entity("YallaArabi.Domain.Entities.RolePermission", b =>
+                {
+                    b.HasOne("YallaArabi.Domain.Entities.Role", null)
+                        .WithMany("Permissions")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("YallaArabi.Domain.Entities.Role", b =>
+                {
+                    b.Navigation("Permissions");
                 });
 #pragma warning restore 612, 618
         }

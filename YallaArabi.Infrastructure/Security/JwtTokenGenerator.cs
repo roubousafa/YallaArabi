@@ -11,19 +11,34 @@ namespace YallaArabi.Infrastructure.Security;
 
 public class JwtTokenGenerator : IJwtTokenGenerator
 {
+    public const string PermissionClaimType = "permission";
+
     private readonly JwtOptions _options;
 
     public JwtTokenGenerator(IOptions<JwtOptions> options) => _options = options.Value;
 
-    public string GenerateAccessToken(User user)
+    public string GenerateAccessToken(User user, IReadOnlyList<string>? permissions = null)
     {
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email.Value),
-            new Claim("full_name", user.FullName),
-            new Claim(ClaimTypes.Role, user.Role)
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(JwtRegisteredClaimNames.Email, user.Email.Value),
+            new("full_name", user.FullName),
+            new(ClaimTypes.Role, user.Role)
         };
+
+        if (user.RoleId.HasValue)
+        {
+            claims.Add(new Claim("role_id", user.RoleId.Value.ToString()));
+        }
+
+        if (permissions is not null)
+        {
+            foreach (var permission in permissions.Distinct())
+            {
+                claims.Add(new Claim(PermissionClaimType, permission));
+            }
+        }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SigningKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

@@ -1,12 +1,10 @@
 ﻿using FluentValidation;
 
-namespace YallaArabi.Application.Features.Admin.CreateUser;
+namespace YallaArabi.Application.Features.Admin.CreateTeamMember;
 
-public sealed class CreateUserCommandValidator : AbstractValidator<CreateUserCommand>
+public sealed class CreateTeamMemberCommandValidator : AbstractValidator<CreateTeamMemberCommand>
 {
-    private static readonly string[] ValidRoles = { "Student", "Admin" };
-
-    public CreateUserCommandValidator()
+    public CreateTeamMemberCommandValidator()
     {
         RuleFor(x => x.FullName)
             .NotEmpty().WithMessage("Full name is required")
@@ -22,9 +20,7 @@ public sealed class CreateUserCommandValidator : AbstractValidator<CreateUserCom
             .Matches("[A-Z]").WithMessage("Password must contain at least one uppercase letter")
             .Matches("[0-9]").WithMessage("Password must contain at least one digit");
 
-        RuleFor(x => x.Role)
-            .NotEmpty().WithMessage("Role is required")
-            .Must(role => ValidRoles.Contains(role))
-            .WithMessage("Invalid role. Valid options: Student, Admin");
+        RuleFor(x => x.RoleId)
+            .NotEmpty().WithMessage("Role is required for team members");
     }
 }

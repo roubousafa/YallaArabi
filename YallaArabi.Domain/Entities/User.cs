@@ -19,6 +19,7 @@ public sealed class User : AggregateRoot
     public string? LearningMotivation { get; private set; }
     public string? FcmToken { get; private set; }
     public string Role { get; private set; } = "Student";
+    public Guid? RoleId { get; private set; }
     public bool MustChangePassword { get; private set; }
     private User() { }
 
@@ -190,5 +191,17 @@ public sealed class User : AggregateRoot
     public void ClearPasswordChangeRequirement()
     {
         MustChangePassword = false;
+    }
+
+    public void AssignRole(Guid roleId)
+    {
+        RoleId = roleId;
+        Role = "Admin";
+    }
+
+    public void RemoveRole()
+    {
+        RoleId = null;
+        Role = "Student";
     }
 }
