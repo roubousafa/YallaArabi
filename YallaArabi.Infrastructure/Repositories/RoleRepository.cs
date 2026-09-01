@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using YallaArabi.Application.Interfaces;
+using YallaArabi.Domain.Common;
 using YallaArabi.Domain.Entities;
 using YallaArabi.Infrastructure.Persistence;
 
@@ -35,11 +36,23 @@ public class RoleRepository : IRoleRepository
     public async Task<int> CountUsersInRoleAsync(Guid roleId, CancellationToken ct = default) =>
         await _context.Users.CountAsync(u => u.RoleId == roleId, ct);
 
-    public async Task<IReadOnlyList<string>> GetPermissionKeysAsync(Guid roleId, CancellationToken ct = default) =>
-        await _context.RolePermissions
+    public async Task<IReadOnlyList<string>> GetPermissionKeysAsync(Guid roleId, CancellationToken ct = default)
+    {
+        var isSystemRole = await _context.Roles
+            .Where(r => r.Id == roleId)
+            .Select(r => r.IsSystemRole)
+            .FirstOrDefaultAsync(ct);
+
+        if (isSystemRole)
+        {
+            return Permissions.All.Select(p => p.Key).ToList();
+        }
+
+        return await _context.RolePermissions
             .Where(p => p.RoleId == roleId)
             .Select(p => p.PermissionKey)
             .ToListAsync(ct);
+    }
 
     public async Task AddAsync(Role role, CancellationToken ct = default) =>
         await _context.Roles.AddAsync(role, ct);
