@@ -45,9 +45,9 @@ public sealed class UpdateRoleCommandHandler : IRequestHandler<UpdateRoleCommand
         }
 
         role.Update(nameEn, request.NameAr, request.Description);
-        role.SetPermissions(request.Permissions);
-
         await _roleRepository.SaveChangesAsync(cancellationToken);
+
+        await _roleRepository.ReplacePermissionsAsync(role.Id, request.Permissions, cancellationToken);
 
         return Result<Unit>.Success(Unit.Value);
     }

@@ -12,5 +12,6 @@ public interface IRoleRepository
     Task<IReadOnlyList<string>> GetPermissionKeysAsync(Guid roleId, CancellationToken ct = default);
     Task AddAsync(Role role, CancellationToken ct = default);
     Task RemoveAsync(Role role, CancellationToken ct = default);
+    Task ReplacePermissionsAsync(Guid roleId, IEnumerable<string> permissionKeys, CancellationToken ct = default);
     Task SaveChangesAsync(CancellationToken ct = default);
 }

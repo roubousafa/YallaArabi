@@ -59,12 +59,22 @@ public sealed class Role : AggregateRoot
         if (IsSystemRole)
             throw new InvalidOperationException("System role permissions cannot be modified");
 
-        _permissions.Clear();
+        var desired = permissionKeys
+            .Where(k => !string.IsNullOrWhiteSpace(k))
+            .Select(k => k.Trim())
+            .Distinct()
+            .ToHashSet();
 
-        foreach (var key in permissionKeys.Distinct())
+        _permissions.RemoveAll(p => !desired.Contains(p.PermissionKey));
+
+        var existing = _permissions.Select(p => p.PermissionKey).ToHashSet();
+
+        foreach (var key in desired)
         {
-            if (Permissions.Any(p => p.PermissionKey == key))
+            if (existing.Contains(key))
+            {
                 continue;
+            }
 
             _permissions.Add(RolePermission.Create(Id, key));
         }

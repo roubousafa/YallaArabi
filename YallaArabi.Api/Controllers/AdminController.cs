@@ -54,6 +54,8 @@ using YallaArabi.Application.Features.Admin.DeleteRole;
 using YallaArabi.Application.Features.Admin.AssignUserRole;
 using YallaArabi.Api.Authorization;
 using YallaArabi.Domain.Common;
+using YallaArabi.Application.Features.Admin.GetAuditLogs;
+using YallaArabi.Application.Features.Admin.ExportAuditLogs;
 
 namespace YallaArabi.Api.Controllers;
 
@@ -759,6 +761,42 @@ public class AdminController : ControllerBase
         return result.IsSuccess
             ? Ok(ApiResponse<object>.Ok(new { message = "User role updated successfully." }))
             : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+    [HasPermission(Permissions.AuditLogs.View)]
+    [HttpGet("audit-logs")]
+    public async Task<IActionResult> GetAuditLogs(
+    [FromQuery] Guid? userId,
+    [FromQuery] string? action,
+    [FromQuery] DateTime? fromDate,
+    [FromQuery] DateTime? toDate,
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 20,
+    CancellationToken ct = default)
+    {
+        var query = new GetAuditLogsQuery(userId, action, fromDate, toDate, pageNumber, pageSize);
+        var result = await _sender.Send(query, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<PagedAuditLogsResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<PagedAuditLogsResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.AuditLogs.Export)]
+    [HttpGet("audit-logs/export")]
+    public async Task<IActionResult> ExportAuditLogs(
+        [FromQuery] Guid? userId,
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate,
+        CancellationToken ct = default)
+    {
+        var result = await _sender.Send(new ExportAuditLogsQuery(userId, fromDate, toDate), ct);
+
+        if (!result.IsSuccess)
+        {
+            return BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+        }
+
+        return File(result.Value!.Content, "text/csv", result.Value.FileName);
     }
 }
 

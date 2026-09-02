@@ -118,6 +118,7 @@ app.UseStaticFiles();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<AuditLoggingMiddleware>();
 app.MapControllers();
 
 app.MapGet("/", () => "YallaArabi API is running ✅");

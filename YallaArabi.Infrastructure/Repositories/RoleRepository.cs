@@ -63,6 +63,43 @@ public class RoleRepository : IRoleRepository
         await Task.CompletedTask;
     }
 
+    public async Task ReplacePermissionsAsync(Guid roleId, IEnumerable<string> permissionKeys, CancellationToken ct = default)
+    {
+        var existing = await _context.RolePermissions
+            .Where(p => p.RoleId == roleId)
+            .ToListAsync(ct);
+
+        var desired = permissionKeys
+            .Where(k => !string.IsNullOrWhiteSpace(k))
+            .Select(k => k.Trim())
+            .Distinct()
+            .ToList();
+
+        var toRemove = existing.Where(p => !desired.Contains(p.PermissionKey)).ToList();
+
+        if (toRemove.Count > 0)
+        {
+            _context.RolePermissions.RemoveRange(toRemove);
+            await _context.SaveChangesAsync(ct);
+        }
+
+        var remaining = existing
+            .Where(p => desired.Contains(p.PermissionKey))
+            .Select(p => p.PermissionKey)
+            .ToHashSet();
+
+        var toAdd = desired
+            .Where(k => !remaining.Contains(k))
+            .Select(k => RolePermission.Create(roleId, k))
+            .ToList();
+
+        if (toAdd.Count > 0)
+        {
+            await _context.RolePermissions.AddRangeAsync(toAdd, ct);
+            await _context.SaveChangesAsync(ct);
+        }
+    }
+
     public async Task SaveChangesAsync(CancellationToken ct = default) =>
         await _context.SaveChangesAsync(ct);
 }

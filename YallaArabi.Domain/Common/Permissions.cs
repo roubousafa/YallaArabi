@@ -96,6 +96,12 @@ public static class Permissions
         public const string Assign = "roles.assign";
     }
 
+    public static class AuditLogs
+    {
+        public const string View = "audit_logs.view";
+        public const string Export = "audit_logs.export";
+    }
+
     public static IReadOnlyList<PermissionDefinition> All { get; } = new List<PermissionDefinition>
     {
         new(Dashboard.View, "Dashboard", "عرض لوحة المعلومات", "View dashboard"),
@@ -153,6 +159,9 @@ public static class Permissions
         new(Roles.Edit, "Roles", "تعديل دور", "Edit role"),
         new(Roles.Delete, "Roles", "حذف دور", "Delete role"),
         new(Roles.Assign, "Roles", "إسناد دور", "Assign role"),
+
+        new(AuditLogs.View, "Audit Log", "عرض سجل التدقيق", "View audit log"),
+        new(AuditLogs.Export, "Audit Log", "تصدير سجل التدقيق", "Export audit log"),
     };
 }
 
