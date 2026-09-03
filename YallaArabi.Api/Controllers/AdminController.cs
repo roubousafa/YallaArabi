@@ -56,6 +56,10 @@ using YallaArabi.Api.Authorization;
 using YallaArabi.Domain.Common;
 using YallaArabi.Application.Features.Admin.GetAuditLogs;
 using YallaArabi.Application.Features.Admin.ExportAuditLogs;
+using YallaArabi.Application.Features.Admin.GetStudentsReport;
+using YallaArabi.Application.Features.Admin.ExportStudentsReport;
+using YallaArabi.Application.Features.Admin.GetChallengesReport;
+using YallaArabi.Application.Features.Admin.ExportChallengesReport;
 
 namespace YallaArabi.Api.Controllers;
 
@@ -790,6 +794,82 @@ public class AdminController : ControllerBase
         CancellationToken ct = default)
     {
         var result = await _sender.Send(new ExportAuditLogsQuery(userId, fromDate, toDate), ct);
+
+        if (!result.IsSuccess)
+        {
+            return BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+        }
+
+        return File(result.Value!.Content, "text/csv", result.Value.FileName);
+    }
+
+    [HasPermission(Permissions.Reports.View)]
+    [HttpGet("reports/students")]
+    public async Task<IActionResult> GetStudentsReport(
+    [FromQuery] string? searchTerm,
+    [FromQuery] string? levelCode,
+    [FromQuery] DateTime? fromDate,
+    [FromQuery] DateTime? toDate,
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 20,
+    CancellationToken ct = default)
+    {
+        var query = new GetStudentsReportQuery(searchTerm, levelCode, fromDate, toDate, pageNumber, pageSize);
+        var result = await _sender.Send(query, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<PagedStudentsReportResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<PagedStudentsReportResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Reports.Export)]
+    [HttpGet("reports/students/export")]
+    public async Task<IActionResult> ExportStudentsReport(
+        [FromQuery] string? searchTerm,
+        [FromQuery] string? levelCode,
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate,
+        CancellationToken ct = default)
+    {
+        var query = new ExportStudentsReportQuery(searchTerm, levelCode, fromDate, toDate);
+        var result = await _sender.Send(query, ct);
+
+        if (!result.IsSuccess)
+        {
+            return BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+        }
+
+        return File(result.Value!.Content, "text/csv", result.Value.FileName);
+    }
+
+    [HasPermission(Permissions.Reports.View)]
+    [HttpGet("reports/challenges")]
+    public async Task<IActionResult> GetChallengesReport(
+        [FromQuery] Guid? userId,
+        [FromQuery] string? levelCode,
+        [FromQuery] Guid? challengeId,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken ct = default)
+    {
+        var query = new GetChallengesReportQuery(userId, levelCode, challengeId, pageNumber, pageSize);
+        var result = await _sender.Send(query, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<PagedChallengesReportResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<PagedChallengesReportResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Reports.Export)]
+    [HttpGet("reports/challenges/export")]
+    public async Task<IActionResult> ExportChallengesReport(
+        [FromQuery] Guid? userId,
+        [FromQuery] string? levelCode,
+        [FromQuery] Guid? challengeId,
+        CancellationToken ct = default)
+    {
+        var query = new ExportChallengesReportQuery(userId, levelCode, challengeId);
+        var result = await _sender.Send(query, ct);
 
         if (!result.IsSuccess)
         {

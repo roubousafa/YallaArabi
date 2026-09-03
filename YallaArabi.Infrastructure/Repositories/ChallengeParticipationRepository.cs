@@ -39,6 +39,55 @@ public class ChallengeParticipationRepository : IChallengeParticipationRepositor
     public async Task AddAsync(ChallengeParticipation participation, CancellationToken ct = default) =>
         await _context.ChallengeParticipations.AddAsync(participation, ct);
 
+    public async Task<(IReadOnlyList<ChallengeParticipation> Items, int TotalCount)> GetReportAsync(
+    Guid? userId, Guid? challengeId, IReadOnlyList<Guid>? challengeIds,
+    int pageNumber, int pageSize, CancellationToken ct = default)
+    {
+        var query = BuildReportQuery(userId, challengeId, challengeIds);
+
+        var totalCount = await query.CountAsync(ct);
+
+        var items = await query
+            .OrderByDescending(p => p.StartedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        return (items, totalCount);
+    }
+
+    public async Task<IReadOnlyList<ChallengeParticipation>> GetReportForExportAsync(
+        Guid? userId, Guid? challengeId, IReadOnlyList<Guid>? challengeIds,
+        int maxRecords, CancellationToken ct = default)
+    {
+        return await BuildReportQuery(userId, challengeId, challengeIds)
+            .OrderByDescending(p => p.StartedAt)
+            .Take(maxRecords)
+            .ToListAsync(ct);
+    }
+
+    private IQueryable<ChallengeParticipation> BuildReportQuery(
+        Guid? userId, Guid? challengeId, IReadOnlyList<Guid>? challengeIds)
+    {
+        var query = _context.ChallengeParticipations.AsQueryable();
+
+        if (userId.HasValue)
+        {
+            query = query.Where(p => p.UserId == userId.Value);
+        }
+
+        if (challengeId.HasValue)
+        {
+            query = query.Where(p => p.ChallengeId == challengeId.Value);
+        }
+        else if (challengeIds is not null)
+        {
+            query = query.Where(p => challengeIds.Contains(p.ChallengeId));
+        }
+
+        return query;
+    }
+
     public async Task SaveChangesAsync(CancellationToken ct = default) =>
         await _context.SaveChangesAsync(ct);
 }

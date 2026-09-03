@@ -11,4 +11,12 @@ public interface IChallengeParticipationRepository
     Task<IReadOnlyList<ChallengeParticipation>> GetByChallengeIdAsync(Guid challengeId, CancellationToken ct = default);
     Task AddAsync(ChallengeParticipation participation, CancellationToken ct = default);
     Task SaveChangesAsync(CancellationToken ct = default);
+
+    Task<(IReadOnlyList<ChallengeParticipation> Items, int TotalCount)> GetReportAsync(
+    Guid? userId, Guid? challengeId, IReadOnlyList<Guid>? challengeIds,
+    int pageNumber, int pageSize, CancellationToken ct = default);
+
+    Task<IReadOnlyList<ChallengeParticipation>> GetReportForExportAsync(
+        Guid? userId, Guid? challengeId, IReadOnlyList<Guid>? challengeIds,
+        int maxRecords, CancellationToken ct = default);
 }

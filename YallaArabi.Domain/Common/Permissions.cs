@@ -102,6 +102,12 @@ public static class Permissions
         public const string Export = "audit_logs.export";
     }
 
+    public static class Reports
+    {
+        public const string View = "reports.view";
+        public const string Export = "reports.export";
+    }
+
     public static IReadOnlyList<PermissionDefinition> All { get; } = new List<PermissionDefinition>
     {
         new(Dashboard.View, "Dashboard", "عرض لوحة المعلومات", "View dashboard"),
@@ -162,6 +168,9 @@ public static class Permissions
 
         new(AuditLogs.View, "Audit Log", "عرض سجل التدقيق", "View audit log"),
         new(AuditLogs.Export, "Audit Log", "تصدير سجل التدقيق", "Export audit log"),
+
+         new(Reports.View, "Reports", "عرض التقارير", "View reports"),
+        new(Reports.Export, "Reports", "تصدير التقارير", "Export reports"),
     };
 }
 

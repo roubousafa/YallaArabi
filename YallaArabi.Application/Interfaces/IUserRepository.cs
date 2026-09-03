@@ -14,4 +14,20 @@ public interface IUserRepository
     Task<bool> EmailExistsAsync(string email, CancellationToken ct = default);
     Task SaveChangesAsync(CancellationToken ct = default);
     Task<IReadOnlyList<User>> GetAllByRoleAsync(string role, CancellationToken ct = default);
+    Task<(IReadOnlyList<User> Items, int TotalCount)> GetStudentsReportAsync(
+    string? searchTerm,
+    Guid? levelId,
+    DateTime? fromDate,
+    DateTime? toDate,
+    int pageNumber,
+    int pageSize,
+    CancellationToken ct = default);
+
+    Task<IReadOnlyList<User>> GetStudentsReportForExportAsync(
+        string? searchTerm,
+        Guid? levelId,
+        DateTime? fromDate,
+        DateTime? toDate,
+        int maxRecords,
+        CancellationToken ct = default);
 }

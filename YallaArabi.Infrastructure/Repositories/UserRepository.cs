@@ -99,6 +99,72 @@ public class UserRepository : IUserRepository
         await Task.CompletedTask;
     }
 
+    public async Task<(IReadOnlyList<User> Items, int TotalCount)> GetStudentsReportAsync(
+    string? searchTerm,
+    Guid? levelId,
+    DateTime? fromDate,
+    DateTime? toDate,
+    int pageNumber,
+    int pageSize,
+    CancellationToken ct = default)
+    {
+        var query = BuildStudentsReportQuery(searchTerm, levelId, fromDate, toDate);
+
+        var totalCount = await query.CountAsync(ct);
+
+        var items = await query
+            .OrderByDescending(u => u.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        return (items, totalCount);
+    }
+
+    public async Task<IReadOnlyList<User>> GetStudentsReportForExportAsync(
+        string? searchTerm,
+        Guid? levelId,
+        DateTime? fromDate,
+        DateTime? toDate,
+        int maxRecords,
+        CancellationToken ct = default)
+    {
+        return await BuildStudentsReportQuery(searchTerm, levelId, fromDate, toDate)
+            .OrderByDescending(u => u.CreatedAt)
+            .Take(maxRecords)
+            .ToListAsync(ct);
+    }
+
+    private IQueryable<User> BuildStudentsReportQuery(
+        string? searchTerm, Guid? levelId, DateTime? fromDate, DateTime? toDate)
+    {
+        var query = _context.Users.Where(u => u.Role == "Student");
+
+        if (levelId.HasValue)
+        {
+            query = query.Where(u => u.CurrentLevelId == levelId.Value);
+        }
+
+        if (fromDate.HasValue)
+        {
+            query = query.Where(u => u.CreatedAt >= fromDate.Value);
+        }
+
+        if (toDate.HasValue)
+        {
+            query = query.Where(u => u.CreatedAt <= toDate.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var pattern = $"%{searchTerm.Trim()}%";
+            query = query.Where(u => EF.Functions.Like(u.FullName, pattern));
+        }
+
+        return query;
+    }
+
+
     public async Task<IReadOnlyList<User>> GetAllByRoleAsync(string role, CancellationToken ct = default) =>
         await _context.Users.Where(u => u.Role == role).ToListAsync(ct);
 }
