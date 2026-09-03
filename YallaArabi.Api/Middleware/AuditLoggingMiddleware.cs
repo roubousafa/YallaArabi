@@ -45,7 +45,7 @@ public class AuditLoggingMiddleware
             var method = context.Request.Method.ToUpperInvariant();
             var path = context.Request.Path.Value ?? "";
 
-            var (action, entityType) = AuditActionMap.Resolve(method, path);
+            var (actionEn, actionAr, entityType) = AuditActionMap.Resolve(method, path);
             var entityId = AuditActionMap.ExtractEntityId(path);
             var ip = context.Connection.RemoteIpAddress?.ToString();
 
@@ -56,7 +56,8 @@ public class AuditLoggingMiddleware
                 userId,
                 fullName,
                 email,
-                action,
+                actionEn,
+                actionAr,
                 method,
                 path,
                 context.Response.StatusCode,
@@ -94,6 +95,6 @@ public class AuditLoggingMiddleware
 
         var status = context.Response.StatusCode;
 
-        return status >= 200 && status < 300;
+        return (status >= 200 && status < 300) || status == 403;
     }
 }

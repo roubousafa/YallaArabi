@@ -60,6 +60,7 @@ using YallaArabi.Application.Features.Admin.GetStudentsReport;
 using YallaArabi.Application.Features.Admin.ExportStudentsReport;
 using YallaArabi.Application.Features.Admin.GetChallengesReport;
 using YallaArabi.Application.Features.Admin.ExportChallengesReport;
+using YallaArabi.Application.Features.Admin.CreateStudent;
 
 namespace YallaArabi.Api.Controllers;
 
@@ -877,6 +878,17 @@ public class AdminController : ControllerBase
         }
 
         return File(result.Value!.Content, "text/csv", result.Value.FileName);
+    }
+
+    [HasPermission(Permissions.Students.Create)]
+    [HttpPost("students")]
+    public async Task<IActionResult> CreateStudent(CreateStudentCommand command, CancellationToken ct)
+    {
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<CreateStudentResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<CreateStudentResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 }
 

@@ -28,7 +28,12 @@ namespace YallaArabi.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Action")
+                    b.Property<string>("ActionAr")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("ActionEn")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");

@@ -22,7 +22,7 @@ public sealed class ExportAuditLogsQueryHandler : IRequestHandler<ExportAuditLog
             request.UserId, request.FromDate, request.ToDate, MaxExportRecords, cancellationToken);
 
         var builder = new StringBuilder();
-        builder.AppendLine("OccurredAt,UserFullName,UserEmail,Action,EntityType,EntityId,HttpMethod,Path,StatusCode,IpAddress");
+        builder.AppendLine("OccurredAt,UserFullName,UserEmail,ActionEn,ActionAr,EntityType,EntityId,HttpMethod,Path,StatusCode,IpAddress");
 
         foreach (var log in logs)
         {
@@ -30,7 +30,8 @@ public sealed class ExportAuditLogsQueryHandler : IRequestHandler<ExportAuditLog
                 Escape(log.OccurredAt.ToString("yyyy-MM-dd HH:mm:ss")),
                 Escape(log.UserFullName),
                 Escape(log.UserEmail),
-                Escape(log.Action),
+                Escape(log.ActionEn),
+                Escape(log.ActionAr),
                 Escape(log.EntityType),
                 Escape(log.EntityId),
                 Escape(log.HttpMethod),

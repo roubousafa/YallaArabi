@@ -25,7 +25,9 @@ public class AuditLogRepository : IAuditLogRepository
         if (!string.IsNullOrWhiteSpace(action))
         {
             var pattern = $"%{action.Trim()}%";
-            query = query.Where(a => EF.Functions.Like(a.Action, pattern));
+            query = query.Where(a =>
+                EF.Functions.Like(a.ActionEn, pattern) ||
+                EF.Functions.Like(a.ActionAr, pattern));
         }
 
         var totalCount = await query.CountAsync(ct);

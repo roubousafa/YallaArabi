@@ -7,7 +7,8 @@ public sealed class AuditLog : AggregateRoot
     public Guid UserId { get; private set; }
     public string UserFullName { get; private set; } = default!;
     public string UserEmail { get; private set; } = default!;
-    public string Action { get; private set; } = default!;
+    public string ActionEn { get; private set; } = default!;
+    public string ActionAr { get; private set; } = default!;
     public string? EntityType { get; private set; }
     public string? EntityId { get; private set; }
     public string HttpMethod { get; private set; } = default!;
@@ -22,7 +23,8 @@ public sealed class AuditLog : AggregateRoot
         Guid userId,
         string userFullName,
         string userEmail,
-        string action,
+        string actionEn,
+        string actionAr,
         string httpMethod,
         string path,
         int statusCode,
@@ -36,7 +38,8 @@ public sealed class AuditLog : AggregateRoot
             UserId = userId,
             UserFullName = userFullName,
             UserEmail = userEmail,
-            Action = action,
+            ActionEn = actionEn,
+            ActionAr = actionAr,
             EntityType = entityType,
             EntityId = entityId,
             HttpMethod = httpMethod,
