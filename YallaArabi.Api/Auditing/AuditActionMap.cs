@@ -49,6 +49,9 @@ public static class AuditActionMap
         new("DELETE", "/admin/challenges",              "Delete challenge",         "حذف تحدٍّ",                   "Challenge"),
 
         new("POST",   "/admin/uploads",                 "Upload file",              "رفع ملف",                     "Upload"),
+                new("POST",   "/admin/lessons",                 "Create lesson",            "إضافة درس",                   "Lesson"),
+        new("PUT",    "/admin/lessons",                 "Update lesson",            "تعديل درس",                   "Lesson"),
+        new("DELETE", "/admin/lessons",                 "Delete lesson",            "حذف درس",                     "Lesson"),
     };
 
     public static (string ActionEn, string ActionAr, string? EntityType) Resolve(string method, string path)

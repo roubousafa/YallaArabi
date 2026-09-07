@@ -61,6 +61,11 @@ using YallaArabi.Application.Features.Admin.ExportStudentsReport;
 using YallaArabi.Application.Features.Admin.GetChallengesReport;
 using YallaArabi.Application.Features.Admin.ExportChallengesReport;
 using YallaArabi.Application.Features.Admin.CreateStudent;
+using YallaArabi.Application.Features.Admin.GetLessons;
+using YallaArabi.Application.Features.Admin.CreateLesson;
+using YallaArabi.Application.Features.Admin.UpdateLesson;
+using YallaArabi.Application.Features.Admin.DeleteLesson;
+using YallaArabi.Application.Features.Admin.GetParticipationAnswers;
 
 namespace YallaArabi.Api.Controllers;
 
@@ -890,6 +895,70 @@ public class AdminController : ControllerBase
             ? Ok(ApiResponse<CreateStudentResponse>.Ok(result.Value!))
             : BadRequest(ApiResponse<CreateStudentResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
+
+    [HasPermission(Permissions.Lessons.View)]
+    [HttpGet("categories/{categoryId}/lessons")]
+    public async Task<IActionResult> GetLessons(Guid categoryId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new GetLessonsQuery(categoryId), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<LessonsListResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<LessonsListResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Lessons.Create)]
+    [HttpPost("lessons")]
+    public async Task<IActionResult> CreateLesson(CreateLessonCommand command, CancellationToken ct)
+    {
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<CreateLessonResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<CreateLessonResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Lessons.Edit)]
+    [HttpPut("lessons/{lessonId}")]
+    public async Task<IActionResult> UpdateLesson(Guid lessonId, [FromBody] UpdateLessonBody body, CancellationToken ct)
+    {
+        var command = new UpdateLessonCommand(
+            lessonId,
+            body.Title,
+            body.Description,
+            body.IconUrl,
+            body.OrderIndex,
+            body.PointsReward,
+            body.CategoryId);
+
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(new { message = "Lesson updated successfully." }))
+            : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Lessons.Delete)]
+    [HttpDelete("lessons/{lessonId}")]
+    public async Task<IActionResult> DeleteLesson(Guid lessonId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new DeleteLessonCommand(lessonId), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(new { message = "Lesson deleted successfully." }))
+            : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Challenges.ViewParticipants)]
+    [HttpGet("challenges/participations/{participationId}/answers")]
+    public async Task<IActionResult> GetParticipationAnswers(Guid participationId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new GetParticipationAnswersQuery(participationId), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<ParticipationAnswersResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<ParticipationAnswersResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
 }
 
 public sealed record UpdateWordBody(
@@ -963,3 +1032,12 @@ public sealed record UpdateRoleBody(
 );
 
 public sealed record AssignRoleBody(Guid? RoleId);
+
+public sealed record UpdateLessonBody(
+    string Title,
+    string? Description,
+    string? IconUrl,
+    int OrderIndex,
+    int PointsReward,
+    Guid? CategoryId
+);

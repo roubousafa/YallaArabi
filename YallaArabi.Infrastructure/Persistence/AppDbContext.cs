@@ -28,6 +28,7 @@ public class AppDbContext : DbContext
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<ChallengeAssignment> ChallengeAssignments => Set<ChallengeAssignment>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<ChallengeAnswer> ChallengeAnswers => Set<ChallengeAnswer>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

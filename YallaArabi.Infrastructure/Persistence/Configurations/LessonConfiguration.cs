@@ -15,6 +15,12 @@ public class LessonConfiguration : IEntityTypeConfiguration<Lesson>
             .HasMaxLength(200)
             .IsRequired();
 
+        builder.Property(l => l.Description)
+    .HasMaxLength(500);
+
+        builder.Property(l => l.IconUrl)
+            .HasMaxLength(500);
+
         builder.Property(l => l.OrderIndex)
             .IsRequired();
 

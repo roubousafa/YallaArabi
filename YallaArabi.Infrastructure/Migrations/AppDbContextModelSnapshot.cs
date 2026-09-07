@@ -167,6 +167,40 @@ namespace YallaArabi.Infrastructure.Migrations
                     b.ToTable("challenges", (string)null);
                 });
 
+            modelBuilder.Entity("YallaArabi.Domain.Entities.ChallengeAnswer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CorrectOption")
+                        .IsRequired()
+                        .HasMaxLength(1)
+                        .HasColumnType("character varying(1)");
+
+                    b.Property<bool>("IsCorrect")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("OrderIndex")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ParticipationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SelectedOption")
+                        .HasMaxLength(1)
+                        .HasColumnType("character varying(1)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParticipationId");
+
+                    b.ToTable("challenge_answers", (string)null);
+                });
+
             modelBuilder.Entity("YallaArabi.Domain.Entities.ChallengeAssignment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -334,6 +368,14 @@ namespace YallaArabi.Infrastructure.Migrations
 
                     b.Property<Guid>("CategoryId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("IconUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<int>("OrderIndex")
                         .HasColumnType("integer");

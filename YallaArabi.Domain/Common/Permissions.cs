@@ -108,6 +108,14 @@ public static class Permissions
         public const string Export = "reports.export";
     }
 
+    public static class Lessons
+    {
+        public const string View = "lessons.view";
+        public const string Create = "lessons.create";
+        public const string Edit = "lessons.edit";
+        public const string Delete = "lessons.delete";
+    }
+
     public static IReadOnlyList<PermissionDefinition> All { get; } = new List<PermissionDefinition>
     {
         new(Dashboard.View, "Dashboard", "عرض لوحة المعلومات", "View dashboard"),
@@ -171,6 +179,11 @@ public static class Permissions
 
          new(Reports.View, "Reports", "عرض التقارير", "View reports"),
         new(Reports.Export, "Reports", "تصدير التقارير", "Export reports"),
+
+                new(Lessons.View, "Content", "عرض الدروس", "View lessons"),
+        new(Lessons.Create, "Content", "إضافة درس", "Create lesson"),
+        new(Lessons.Edit, "Content", "تعديل درس", "Edit lesson"),
+        new(Lessons.Delete, "Content", "حذف درس", "Delete lesson"),
     };
 }
 

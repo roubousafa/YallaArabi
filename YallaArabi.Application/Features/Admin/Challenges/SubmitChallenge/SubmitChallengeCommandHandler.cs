@@ -1,6 +1,7 @@
 ﻿using Mediator;
 using YallaArabi.Application.Common;
 using YallaArabi.Application.Interfaces;
+using YallaArabi.Domain.Entities;
 
 namespace YallaArabi.Application.Features.Challenges.SubmitChallenge;
 
@@ -13,6 +14,7 @@ public sealed class SubmitChallengeCommandHandler : IRequestHandler<SubmitChalle
     private readonly IChallengeRepository _challengeRepository;
     private readonly IChallengeQuestionRepository _questionRepository;
     private readonly IChallengeParticipationRepository _participationRepository;
+    private readonly IChallengeAnswerRepository _answerRepository;
     private readonly IPointsService _pointsService;
     private readonly ICurrentUserService _currentUserService;
 
@@ -20,12 +22,14 @@ public sealed class SubmitChallengeCommandHandler : IRequestHandler<SubmitChalle
         IChallengeRepository challengeRepository,
         IChallengeQuestionRepository questionRepository,
         IChallengeParticipationRepository participationRepository,
+        IChallengeAnswerRepository answerRepository,
         IPointsService pointsService,
         ICurrentUserService currentUserService)
     {
         _challengeRepository = challengeRepository;
         _questionRepository = questionRepository;
         _participationRepository = participationRepository;
+        _answerRepository = answerRepository;
         _pointsService = pointsService;
         _currentUserService = currentUserService;
     }
@@ -66,9 +70,9 @@ public sealed class SubmitChallengeCommandHandler : IRequestHandler<SubmitChalle
         var isExpired = participation.IsExpired(challenge.TimeLimitSeconds);
 
         var questions = await _questionRepository.GetByChallengeIdAsync(challenge.Id, cancellationToken);
-        var questionsById = questions.ToDictionary(q => q.Id);
 
         var results = new List<AnswerResult>();
+        var answersToSave = new List<ChallengeAnswer>();
         var correctCount = 0;
 
         foreach (var question in questions)
@@ -89,6 +93,14 @@ public sealed class SubmitChallengeCommandHandler : IRequestHandler<SubmitChalle
                 selectedOption,
                 question.CorrectOption,
                 isCorrect));
+
+            answersToSave.Add(ChallengeAnswer.Create(
+                participation.Id,
+                question.Id,
+                submitted?.SelectedOption?.Trim().ToUpperInvariant(),
+                question.CorrectOption,
+                isCorrect,
+                question.OrderIndex));
         }
 
         var scorePercentage = questions.Count == 0 ? 0 : (int)Math.Round(correctCount * 100.0 / questions.Count);
@@ -102,6 +114,9 @@ public sealed class SubmitChallengeCommandHandler : IRequestHandler<SubmitChalle
             actionKey,
             challenge.Id,
             ct: cancellationToken);
+
+        await _answerRepository.AddRangeAsync(answersToSave, cancellationToken);
+        await _answerRepository.SaveChangesAsync(cancellationToken);
 
         participation.Complete(correctCount, pointsEarned);
         await _participationRepository.SaveChangesAsync(cancellationToken);
