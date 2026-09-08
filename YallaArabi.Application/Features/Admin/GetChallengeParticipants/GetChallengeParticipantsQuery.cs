@@ -16,6 +16,7 @@ public sealed record ChallengeParticipantsResponse(
 );
 
 public sealed record ParticipantItem(
+    Guid ParticipationId,
     Guid UserId,
     string FullName,
     string Email,

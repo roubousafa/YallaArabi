@@ -57,6 +57,7 @@ public sealed class GetChallengeParticipantsQueryHandler : IRequestHandler<GetCh
             rank++;
 
             participants.Add(new ParticipantItem(
+                participation.Id,
                 participation.UserId,
                 user?.FullName ?? "(deleted user)",
                 user?.Email.Value ?? "-",
