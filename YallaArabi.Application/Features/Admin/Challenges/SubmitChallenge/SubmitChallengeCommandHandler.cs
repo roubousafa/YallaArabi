@@ -1,6 +1,7 @@
 ﻿using Mediator;
 using YallaArabi.Application.Common;
 using YallaArabi.Application.Interfaces;
+using YallaArabi.Domain.Common;
 using YallaArabi.Domain.Entities;
 
 namespace YallaArabi.Application.Features.Challenges.SubmitChallenge;
@@ -16,6 +17,7 @@ public sealed class SubmitChallengeCommandHandler : IRequestHandler<SubmitChalle
     private readonly IChallengeParticipationRepository _participationRepository;
     private readonly IChallengeAnswerRepository _answerRepository;
     private readonly IPointsService _pointsService;
+    private readonly IActivityService _activityService;
     private readonly ICurrentUserService _currentUserService;
 
     public SubmitChallengeCommandHandler(
@@ -24,6 +26,7 @@ public sealed class SubmitChallengeCommandHandler : IRequestHandler<SubmitChalle
         IChallengeParticipationRepository participationRepository,
         IChallengeAnswerRepository answerRepository,
         IPointsService pointsService,
+        IActivityService activityService,
         ICurrentUserService currentUserService)
     {
         _challengeRepository = challengeRepository;
@@ -31,6 +34,7 @@ public sealed class SubmitChallengeCommandHandler : IRequestHandler<SubmitChalle
         _participationRepository = participationRepository;
         _answerRepository = answerRepository;
         _pointsService = pointsService;
+        _activityService = activityService;
         _currentUserService = currentUserService;
     }
 
@@ -120,6 +124,16 @@ public sealed class SubmitChallengeCommandHandler : IRequestHandler<SubmitChalle
 
         participation.Complete(correctCount, pointsEarned);
         await _participationRepository.SaveChangesAsync(cancellationToken);
+
+        // Challenges are timed, so the real elapsed time is used instead of an estimate.
+        var elapsedSeconds = (int)(participation.CompletedAt!.Value - participation.StartedAt).TotalSeconds;
+
+        await _activityService.RecordAsync(
+            currentUserId.Value,
+            ActivityTypes.ChallengeCompleted,
+            challenge.Id,
+            Math.Clamp(elapsedSeconds, 0, challenge.TimeLimitSeconds),
+            cancellationToken);
 
         var response = new SubmitChallengeResponse(
             participation.Id,

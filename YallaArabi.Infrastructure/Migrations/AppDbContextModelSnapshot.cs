@@ -777,6 +777,41 @@ namespace YallaArabi.Infrastructure.Migrations
                     b.ToTable("users", (string)null);
                 });
 
+            modelBuilder.Entity("YallaArabi.Domain.Entities.UserActivity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ActivityType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("DurationSeconds")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly>("LocalDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RelatedEntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "LocalDate");
+
+                    b.HasIndex("UserId", "ActivityType", "RelatedEntityId", "LocalDate");
+
+                    b.ToTable("user_activities", (string)null);
+                });
+
             modelBuilder.Entity("YallaArabi.Domain.Entities.Word", b =>
                 {
                     b.Property<Guid>("Id")

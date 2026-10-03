@@ -41,6 +41,8 @@ public sealed class WordReview : AggregateRoot
         NextReviewAt = DateTime.UtcNow.AddDays(newInterval);
         LastReviewedAt = DateTime.UtcNow;
     }
+
+    public bool IsDue() => NextReviewAt <= DateTime.UtcNow;
 }
 
 public enum ReviewGrade

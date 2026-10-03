@@ -1,6 +1,7 @@
 ﻿using Mediator;
 using YallaArabi.Application.Common;
 using YallaArabi.Application.Interfaces;
+using YallaArabi.Domain.Common;
 using YallaArabi.Domain.Entities;
 
 namespace YallaArabi.Application.Features.Levels.CompleteLesson;
@@ -12,17 +13,20 @@ public sealed class CompleteLessonCommandHandler : IRequestHandler<CompleteLesso
     private readonly ILessonRepository _lessonRepository;
     private readonly IStudentLessonProgressRepository _progressRepository;
     private readonly IPointsService _pointsService;
+    private readonly IActivityService _activityService;
     private readonly ICurrentUserService _currentUserService;
 
     public CompleteLessonCommandHandler(
         ILessonRepository lessonRepository,
         IStudentLessonProgressRepository progressRepository,
         IPointsService pointsService,
+        IActivityService activityService,
         ICurrentUserService currentUserService)
     {
         _lessonRepository = lessonRepository;
         _progressRepository = progressRepository;
         _pointsService = pointsService;
+        _activityService = activityService;
         _currentUserService = currentUserService;
     }
 
@@ -41,6 +45,14 @@ public sealed class CompleteLessonCommandHandler : IRequestHandler<CompleteLesso
         {
             return Result<CompleteLessonResponse>.Failure("lesson_not_found", "Lesson not found");
         }
+
+        // Repeating a completed lesson still counts as studying for the streak and daily goal.
+        await _activityService.RecordAsync(
+            currentUserId.Value,
+            ActivityTypes.LessonCompleted,
+            lesson.Id,
+            ActivityTypes.LessonEstimatedSeconds,
+            cancellationToken);
 
         var alreadyCompleted = await _progressRepository.ExistsAsync(currentUserId.Value, request.LessonId, cancellationToken);
 

@@ -3,6 +3,7 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using YallaArabi.Api.Common;
 using YallaArabi.Api.Middleware;
 using YallaArabi.Application;
 using YallaArabi.Infrastructure;
@@ -47,6 +48,8 @@ builder.Services.AddSwaggerGen(options =>
             Array.Empty<string>()
         }
     });
+
+    options.OperationFilter<TimeZoneHeaderOperationFilter>();
 });
 builder.Services.AddFluentValidationAutoValidation();
 
