@@ -64,6 +64,10 @@ public static class DependencyInjection
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         services.AddScoped<IChallengeAnswerRepository, ChallengeAnswerRepository>();
+        services.AddScoped<IVoiceProfileRepository, VoiceProfileRepository>();
+        services.AddScoped<IWordAudioRepository, WordAudioRepository>();
+        services.AddScoped<IRecordingSessionRepository, RecordingSessionRepository>();
+services.AddScoped<IAccountDeletionService, AccountDeletionService>();
         return services;
     }
 }

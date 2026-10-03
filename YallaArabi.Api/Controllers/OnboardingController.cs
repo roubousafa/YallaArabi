@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using YallaArabi.Api.Common;
 using YallaArabi.Application.Features.Onboarding;
+using YallaArabi.Application.Features.Onboarding.GetDialectOptions;
+using YallaArabi.Application.Features.Onboarding.SetDialect;
 
 namespace YallaArabi.Api.Controllers;
 
@@ -66,5 +68,27 @@ public class OnboardingController : ControllerBase
         return result.IsSuccess
             ? Ok(ApiResponse<SetLearningMotivationResponse>.Ok(result.Value!))
             : BadRequest(ApiResponse<SetLearningMotivationResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [AllowAnonymous]
+    [HttpGet("dialect-options")]
+    public async Task<IActionResult> GetDialectOptions(CancellationToken ct)
+    {
+        var result = await _sender.Send(new GetDialectOptionsQuery(), ct);
+
+        return result.IsSuccess
+                        ? Ok(ApiResponse<DialectOptionsResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<DialectOptionsResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [Authorize]
+    [HttpPost("dialect")]
+    public async Task<IActionResult> SetDialect(SetDialectCommand command, CancellationToken ct)
+    {
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<SetDialectResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<SetDialectResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 }

@@ -66,6 +66,10 @@ using YallaArabi.Application.Features.Admin.CreateLesson;
 using YallaArabi.Application.Features.Admin.UpdateLesson;
 using YallaArabi.Application.Features.Admin.DeleteLesson;
 using YallaArabi.Application.Features.Admin.GetParticipationAnswers;
+using YallaArabi.Application.Features.Admin.PrepareRecordingSession;
+using YallaArabi.Application.Features.Admin.ExportRecordingScript;
+using YallaArabi.Application.Features.Admin.UploadSessionAudio;
+
 
 namespace YallaArabi.Api.Controllers;
 
@@ -958,6 +962,59 @@ public class AdminController : ControllerBase
         return result.IsSuccess
             ? Ok(ApiResponse<ParticipationAnswersResponse>.Ok(result.Value!))
             : BadRequest(ApiResponse<ParticipationAnswersResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Recordings.Manage)]
+    [HttpPost("recording-sessions/prepare")]
+    public async Task<IActionResult> PrepareRecordingSession(PrepareRecordingSessionCommand command, CancellationToken ct)
+    {
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<PrepareRecordingSessionResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<PrepareRecordingSessionResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Recordings.View)]
+    [HttpGet("recording-sessions/{sessionId}/script")]
+    public async Task<IActionResult> ExportRecordingScript(Guid sessionId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new ExportRecordingScriptQuery(sessionId), ct);
+
+        if (!result.IsSuccess)
+        {
+            return BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+        }
+
+        return File(result.Value!.Content, "text/plain", result.Value.FileName);
+    }
+
+    [HasPermission(Permissions.Recordings.Manage)]
+    [HttpPost("recording-sessions/{sessionId}/upload")]
+    [RequestSizeLimit(500_000_000)]
+    public async Task<IActionResult> UploadSessionAudio(Guid sessionId, IFormFile file, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(ApiResponse<object>.Fail("file_required", "Please upload the session audio file."));
+        }
+
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        var allowed = new[] { ".mp3", ".wav", ".m4a", ".ogg", ".aac", ".webm" };
+
+        if (!allowed.Contains(extension))
+        {
+            return BadRequest(ApiResponse<object>.Fail("invalid_extension",
+                $"Allowed formats: {string.Join(", ", allowed)}"));
+        }
+
+        await using var stream = file.OpenReadStream();
+        var command = new UploadSessionAudioCommand(sessionId, stream, file.FileName, file.ContentType);
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<UploadSessionAudioResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<UploadSessionAudioResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 }
 

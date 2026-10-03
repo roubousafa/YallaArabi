@@ -5,7 +5,9 @@ using YallaArabi.Api.Common;
 using YallaArabi.Application.Features.Friends.GetFriends;
 using YallaArabi.Application.Features.Friends.SendFriendRequest;
 using YallaArabi.Application.Features.Friends.RespondToFriendRequest;
-
+using YallaArabi.Application.Features.Friends.GetMyFriendCode;
+using YallaArabi.Application.Features.Friends.SearchByFriendCode;
+using YallaArabi.Application.Features.Friends.RemoveFriend;
 namespace YallaArabi.Api.Controllers;
 
 [ApiController]
@@ -48,6 +50,36 @@ public class FriendsController : ControllerBase
 
         return result.IsSuccess
             ? Ok(ApiResponse<object>.Ok(new { message = body.Accept ? "Friend request accepted." : "Friend request declined." }))
+            : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpGet("my-code")]
+    public async Task<IActionResult> GetMyFriendCode(CancellationToken ct)
+    {
+        var result = await _sender.Send(new GetMyFriendCodeQuery(), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<MyFriendCodeResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<MyFriendCodeResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpGet("search")]
+    public async Task<IActionResult> SearchByFriendCode([FromQuery] string code, CancellationToken ct)
+    {
+        var result = await _sender.Send(new SearchByFriendCodeQuery(code), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<FriendSearchResult>.Ok(result.Value!))
+            : BadRequest(ApiResponse<FriendSearchResult>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpDelete("{friendshipId}")]
+    public async Task<IActionResult> RemoveFriend(Guid friendshipId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new RemoveFriendCommand(friendshipId), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(new { message = "Friend removed successfully." }))
             : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 }

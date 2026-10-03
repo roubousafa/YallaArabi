@@ -15,8 +15,8 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
         services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
         services.AddScoped<IPointsService, PointsService>();
+        services.AddScoped<IFriendCodeService, FriendCodeService>();
         services.AddScoped<IActivityService, ActivityService>();
-
         return services;
     }
 }

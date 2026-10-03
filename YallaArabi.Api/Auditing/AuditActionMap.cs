@@ -52,6 +52,7 @@ public static class AuditActionMap
                 new("POST",   "/admin/lessons",                 "Create lesson",            "إضافة درس",                   "Lesson"),
         new("PUT",    "/admin/lessons",                 "Update lesson",            "تعديل درس",                   "Lesson"),
         new("DELETE", "/admin/lessons",                 "Delete lesson",            "حذف درس",                     "Lesson"),
+                new("POST",   "/admin/recording-sessions/prepare", "Prepare recording session", "تحضير جلسة تسجيل", "RecordingSession"),
     };
 
     public static (string ActionEn, string ActionAr, string? EntityType) Resolve(string method, string path)

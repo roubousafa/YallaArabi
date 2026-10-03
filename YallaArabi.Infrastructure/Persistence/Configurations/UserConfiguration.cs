@@ -31,6 +31,16 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasMaxLength(20)
             .IsRequired();
 
+        builder.Property(u => u.PreferredDialect)
+    .HasMaxLength(30);
+
+        builder.Property(u => u.PreferredVoiceGender)
+    .HasMaxLength(10);
+        builder.Property(u => u.FriendCode)
+    .HasMaxLength(10);
+
+        builder.HasIndex(u => u.FriendCode).IsUnique();
+
         builder.Ignore(u => u.DomainEvents);
     }
 }

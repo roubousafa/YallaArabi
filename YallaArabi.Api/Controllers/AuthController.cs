@@ -12,6 +12,8 @@ using YallaArabi.Application.Features.Auth.Register;
 using YallaArabi.Application.Features.Auth.ResetPassword;
 using YallaArabi.Application.Features.Notifications.RegisterFcmToken;
 using YallaArabi.Application.Features.Profile.UpdateProfile;
+using YallaArabi.Application.Features.Auth.DeleteAccount;
+using YallaArabi.Application.Features.Auth.ChangePassword;
 
 namespace YallaArabi.Api.Controllers;
 
@@ -110,4 +112,27 @@ public class AuthController : ControllerBase
             ? Ok(ApiResponse<object>.Ok(new { message = "FCM token registered successfully." }))
             : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
+    [Authorize]
+    [HttpDelete("account")]
+    public async Task<IActionResult> DeleteAccount([FromBody] DeleteAccountBody? body, CancellationToken ct)
+    {
+        var result = await _sender.Send(new DeleteAccountCommand(body?.Password), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(new { message = "Account deleted successfully." }))
+            : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [Authorize]
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword(ChangePasswordCommand command, CancellationToken ct)
+    {
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(new { message = "Password changed successfully. Please sign in again." }))
+            : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
 }
+
+public sealed record DeleteAccountBody(string? Password);

@@ -12,6 +12,7 @@ public sealed record StudentDetailsResponse(
     string Role,
     string? LevelCode,
     string? LevelName,
+     string? PreferredDialect,
     DateTime CreatedAt,
     StudentSubscriptionInfo Subscription,
     StudentProgressInfo Progress,

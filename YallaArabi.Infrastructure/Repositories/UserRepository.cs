@@ -167,4 +167,11 @@ public class UserRepository : IUserRepository
 
     public async Task<IReadOnlyList<User>> GetAllByRoleAsync(string role, CancellationToken ct = default) =>
         await _context.Users.Where(u => u.Role == role).ToListAsync(ct);
+
+    public async Task<User?> GetByFriendCodeAsync(string friendCode, CancellationToken ct = default) =>
+    await _context.Users.FirstOrDefaultAsync(u => u.FriendCode == friendCode, ct);
+
+    public async Task<bool> FriendCodeExistsAsync(string friendCode, CancellationToken ct = default) =>
+        await _context.Users.AnyAsync(u => u.FriendCode == friendCode, ct);
+
 }

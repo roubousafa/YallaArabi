@@ -30,4 +30,7 @@ public interface IUserRepository
         DateTime? toDate,
         int maxRecords,
         CancellationToken ct = default);
+
+    Task<User?> GetByFriendCodeAsync(string friendCode, CancellationToken ct = default);
+    Task<bool> FriendCodeExistsAsync(string friendCode, CancellationToken ct = default);
 }

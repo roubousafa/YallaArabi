@@ -30,6 +30,10 @@ public class AppDbContext : DbContext
     public DbSet<ChallengeAssignment> ChallengeAssignments => Set<ChallengeAssignment>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<ChallengeAnswer> ChallengeAnswers => Set<ChallengeAnswer>();
+    public DbSet<VoiceProfile> VoiceProfiles => Set<VoiceProfile>();
+    public DbSet<WordAudio> WordAudios => Set<WordAudio>();
+    public DbSet<RecordingSession> RecordingSessions => Set<RecordingSession>();
+    public DbSet<RecordingSessionItem> RecordingSessionItems => Set<RecordingSessionItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

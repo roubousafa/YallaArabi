@@ -36,7 +36,6 @@ public sealed class GetStudentDetailsQueryHandler : IRequestHandler<GetStudentDe
         _lessonRepository = lessonRepository;
         _wordRepository = wordRepository;
         _pointsService = pointsService;
-        _pointsService = pointsService;
     }
 
     public async ValueTask<Result<StudentDetailsResponse>> Handle(GetStudentDetailsQuery request, CancellationToken cancellationToken)
@@ -103,6 +102,7 @@ public sealed class GetStudentDetailsQueryHandler : IRequestHandler<GetStudentDe
             user.Role,
             levelCode,
             levelName,
+            user.PreferredDialect,
             user.CreatedAt,
             subscriptionInfo,
             progressInfo,

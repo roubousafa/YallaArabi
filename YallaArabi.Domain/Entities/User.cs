@@ -17,10 +17,14 @@ public sealed class User : AggregateRoot
     public string? GoogleId { get; private set; }
     public int? DailyGoalMinutes { get; private set; }
     public string? LearningMotivation { get; private set; }
+    public string? PreferredDialect { get; private set; }
+    public string? PreferredVoiceGender { get; private set; }
     public string? FcmToken { get; private set; }
     public string Role { get; private set; } = "Student";
     public Guid? RoleId { get; private set; }
     public bool MustChangePassword { get; private set; }
+
+    public string? FriendCode { get; private set; }
     private User() { }
 
     public static User Register(string fullName, string emailValue, string passwordHash)
@@ -144,6 +148,22 @@ public sealed class User : AggregateRoot
         LearningMotivation = motivation;
     }
 
+    public void SetPreferredDialect(string dialect)
+    {
+        if (string.IsNullOrWhiteSpace(dialect))
+            throw new ArgumentException("Preferred dialect is required", nameof(dialect));
+
+        PreferredDialect = dialect.Trim().ToLowerInvariant();
+    }
+
+    public void SetPreferredVoiceGender(string gender)
+    {
+        if (string.IsNullOrWhiteSpace(gender))
+            throw new ArgumentException("Preferred voice gender is required", nameof(gender));
+
+        PreferredVoiceGender = gender.Trim().ToLowerInvariant();
+    }
+
     public void SetFcmToken(string fcmToken)
     {
         if (string.IsNullOrWhiteSpace(fcmToken))
@@ -203,5 +223,13 @@ public sealed class User : AggregateRoot
     {
         RoleId = null;
         Role = "Student";
+    }
+
+    public void SetFriendCode(string code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            throw new ArgumentException("Friend code is required", nameof(code));
+
+        FriendCode = code.Trim().ToUpperInvariant();
     }
 }

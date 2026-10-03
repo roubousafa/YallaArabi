@@ -108,6 +108,12 @@ public static class Permissions
         public const string Export = "reports.export";
     }
 
+    public static class Recordings
+    {
+        public const string View = "recordings.view";
+        public const string Manage = "recordings.manage";
+    }
+
     public static class Lessons
     {
         public const string View = "lessons.view";
@@ -184,6 +190,9 @@ public static class Permissions
         new(Lessons.Create, "Content", "إضافة درس", "Create lesson"),
         new(Lessons.Edit, "Content", "تعديل درس", "Edit lesson"),
         new(Lessons.Delete, "Content", "حذف درس", "Delete lesson"),
+
+                new(Recordings.View, "Recordings", "عرض جلسات التسجيل", "View recording sessions"),
+        new(Recordings.Manage, "Recordings", "إدارة جلسات التسجيل", "Manage recording sessions"),
     };
 }
 
