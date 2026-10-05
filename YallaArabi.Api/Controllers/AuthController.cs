@@ -14,6 +14,10 @@ using YallaArabi.Application.Features.Notifications.RegisterFcmToken;
 using YallaArabi.Application.Features.Profile.UpdateProfile;
 using YallaArabi.Application.Features.Auth.DeleteAccount;
 using YallaArabi.Application.Features.Auth.ChangePassword;
+using YallaArabi.Application.Features.Auth.ChangeEmail;
+using YallaArabi.Application.Features.Profile.SetAvatar;
+using Microsoft.Extensions.Options;
+using YallaArabi.Infrastructure.Storage;
 
 namespace YallaArabi.Api.Controllers;
 
@@ -132,6 +136,66 @@ public class AuthController : ControllerBase
         return result.IsSuccess
             ? Ok(ApiResponse<object>.Ok(new { message = "Password changed successfully. Please sign in again." }))
             : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [Authorize]
+    [HttpPost("change-email")]
+    public async Task<IActionResult> ChangeEmail(ChangeEmailCommand command, CancellationToken ct)
+    {
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<ChangeEmailResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<ChangeEmailResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [Authorize]
+    [HttpPost("profile/avatar")]
+    [RequestSizeLimit(6_000_000)]
+    public async Task<IActionResult> UploadAvatar(
+        IFormFile file,
+        [FromServices] IOptions<FileStorageOptions> storageOptions,
+        CancellationToken ct)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(ApiResponse<AvatarResponse>.Fail("file_required", "Please select an image to upload."));
+        }
+
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+        if (!allowedExtensions.Contains(extension))
+        {
+            return BadRequest(ApiResponse<AvatarResponse>.Fail(
+                "invalid_extension",
+                $"Allowed image formats: {string.Join(", ", allowedExtensions)}"));
+        }
+
+        if (file.Length > storageOptions.Value.MaxImageSizeBytes)
+        {
+            return BadRequest(ApiResponse<AvatarResponse>.Fail(
+                "file_too_large",
+                $"Image must be smaller than {storageOptions.Value.MaxImageSizeBytes / 1_000_000} MB."));
+        }
+
+        await using var stream = file.OpenReadStream();
+        var result = await _sender.Send(new SetAvatarCommand(stream, file.FileName, file.ContentType), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<AvatarResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<AvatarResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [Authorize]
+    [HttpDelete("profile/avatar")]
+    public async Task<IActionResult> RemoveAvatar(CancellationToken ct)
+    {
+        var result = await _sender.Send(new SetAvatarCommand(null, null, null), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<AvatarResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<AvatarResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 }
 

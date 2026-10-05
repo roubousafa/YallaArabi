@@ -14,6 +14,12 @@ public class WordReviewRepository : IWordReviewRepository
     public async Task<WordReview?> GetAsync(Guid userId, Guid wordId, CancellationToken ct = default) =>
         await _context.WordReviews.FirstOrDefaultAsync(w => w.UserId == userId && w.WordId == wordId, ct);
 
+    public async Task<IReadOnlyList<WordReview>> GetForWordsAsync(Guid userId, IEnumerable<Guid> wordIds, CancellationToken ct = default)
+    {
+        var ids = wordIds.Distinct().ToList();
+        return await _context.WordReviews.Where(r => r.UserId == userId && ids.Contains(r.WordId)).ToListAsync(ct);
+    }
+
     public async Task<bool> ExistsAsync(Guid userId, Guid wordId, CancellationToken ct = default) =>
         await _context.WordReviews.AnyAsync(w => w.UserId == userId && w.WordId == wordId, ct);
 

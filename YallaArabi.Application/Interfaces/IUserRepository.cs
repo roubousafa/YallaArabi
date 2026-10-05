@@ -7,6 +7,7 @@ public interface IUserRepository
     Task<(IReadOnlyList<User> Items, int TotalCount)> GetPagedTeamAsync(string? searchTerm, Guid? roleId, int pageNumber, int pageSize, CancellationToken ct = default);
     Task<User?> GetByEmailAsync(string email, CancellationToken ct = default);
     Task<User?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<IReadOnlyList<User>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default);
     Task<User?> GetByGoogleIdAsync(string googleId, CancellationToken ct = default);
     Task<(IReadOnlyList<User> Items, int TotalCount)> GetPagedAsync(string? searchTerm, Guid? levelId, int pageNumber, int pageSize, CancellationToken ct = default);
     Task AddAsync(User user, CancellationToken ct = default);

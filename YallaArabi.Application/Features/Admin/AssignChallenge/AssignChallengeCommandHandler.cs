@@ -1,6 +1,7 @@
 ﻿using Mediator;
 using YallaArabi.Application.Common;
 using YallaArabi.Application.Interfaces;
+using YallaArabi.Domain.Common;
 using YallaArabi.Domain.Entities;
 
 namespace YallaArabi.Application.Features.Admin.AssignChallenge;
@@ -12,6 +13,7 @@ public sealed class AssignChallengeCommandHandler : IRequestHandler<AssignChalle
     private readonly IUserRepository _userRepository;
     private readonly INotificationRepository _notificationRepository;
     private readonly IPushNotificationSender _pushNotificationSender;
+    private readonly IUserNotificationRepository _userNotificationRepository;
     private readonly ICurrentUserService _currentUserService;
 
     public AssignChallengeCommandHandler(
@@ -20,6 +22,7 @@ public sealed class AssignChallengeCommandHandler : IRequestHandler<AssignChalle
         IUserRepository userRepository,
         INotificationRepository notificationRepository,
         IPushNotificationSender pushNotificationSender,
+        IUserNotificationRepository userNotificationRepository,
         ICurrentUserService currentUserService)
     {
         _challengeRepository = challengeRepository;
@@ -27,6 +30,7 @@ public sealed class AssignChallengeCommandHandler : IRequestHandler<AssignChalle
         _userRepository = userRepository;
         _notificationRepository = notificationRepository;
         _pushNotificationSender = pushNotificationSender;
+        _userNotificationRepository = userNotificationRepository;
         _currentUserService = currentUserService;
     }
 
@@ -95,6 +99,18 @@ public sealed class AssignChallengeCommandHandler : IRequestHandler<AssignChalle
 
             if (request.SendNotification)
             {
+                await _userNotificationRepository.AddRangeAsync(
+                    new[]
+                    {
+                        UserNotification.Create(
+                            user.Id,
+                            NotificationTypes.ChallengeAssigned,
+                            "New challenge for you!",
+                            $"You have been assigned the challenge: {challenge.Title}",
+                            challenge.Id)
+                    },
+                    cancellationToken);
+
                 if (string.IsNullOrWhiteSpace(user.FcmToken))
                 {
                     notificationsSkipped++;

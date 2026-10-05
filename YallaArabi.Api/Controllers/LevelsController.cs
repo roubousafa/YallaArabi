@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using YallaArabi.Api.Common;
 using YallaArabi.Application.Features.Levels.CompleteLesson;
+using YallaArabi.Application.Features.Levels.GetLessonContent;
+using YallaArabi.Application.Features.Levels.MasterLessonWord;
+using YallaArabi.Application.Features.Reviews.SubmitReview;
 using YallaArabi.Application.Features.Levels.GetLevelDetails;
 using YallaArabi.Application.Features.Levels.GetLevelsMap;
 
@@ -36,6 +39,28 @@ public class LevelsController : ControllerBase
         return result.IsSuccess
             ? Ok(ApiResponse<LevelDetailsResponse>.Ok(result.Value!))
             : BadRequest(ApiResponse<LevelDetailsResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [Authorize]
+    [HttpGet("lessons/{lessonId}")]
+    public async Task<IActionResult> GetLessonContent(Guid lessonId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new GetLessonContentQuery(lessonId), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<LessonContentResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<LessonContentResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [Authorize]
+    [HttpPost("~/api/v1/lessons/words/{wordId}/master")]
+    public async Task<IActionResult> MasterLessonWord(Guid wordId, [FromBody] SubmitReviewBody body, CancellationToken ct)
+    {
+        var result = await _sender.Send(new MasterLessonWordCommand(wordId, body.Grade), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<MasterLessonWordResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<MasterLessonWordResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
     [Authorize]

@@ -5,6 +5,7 @@ namespace YallaArabi.Application.Interfaces;
 public interface IWordReviewRepository
 {
     Task<WordReview?> GetAsync(Guid userId, Guid wordId, CancellationToken ct = default);
+    Task<IReadOnlyList<WordReview>> GetForWordsAsync(Guid userId, IEnumerable<Guid> wordIds, CancellationToken ct = default);
     Task<bool> ExistsAsync(Guid userId, Guid wordId, CancellationToken ct = default);
     Task<IReadOnlyList<WordReview>> GetDueReviewsAsync(Guid userId, DateTime asOf, CancellationToken ct = default);
     Task<IReadOnlyList<Guid>> GetUserIdsWithOverdueReviewsAsync(DateTime overdueBefore, CancellationToken ct = default);

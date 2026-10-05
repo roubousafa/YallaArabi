@@ -74,6 +74,24 @@ public static class AuditActionMap
             return ("Cancel subscription", "إلغاء اشتراك", "Subscription");
         }
 
+        // Lesson content routes nest under /admin/lessons, so they need their own check before the generic lesson rules.
+        if (normalizedPath.Contains("/admin/lessons/") && normalizedPath.Contains("/questions"))
+        {
+            return method switch
+            {
+                "POST" => ("Add lesson question", "إضافة سؤال لدرس", "LessonQuestion"),
+                "PUT" => ("Update lesson question", "تعديل سؤال درس", "LessonQuestion"),
+                _ => ("Delete lesson question", "حذف سؤال درس", "LessonQuestion")
+            };
+        }
+
+        if (normalizedPath.Contains("/admin/lessons/") && normalizedPath.Contains("/words"))
+        {
+            return method == "POST"
+                ? ("Add words to lesson", "إضافة كلمات لدرس", "Lesson")
+                : ("Remove word from lesson", "إزالة كلمة من درس", "Lesson");
+        }
+
         if (normalizedPath.Contains("/role") && method == "PUT")
         {
             return ("Assign role to user", "إسناد دور لمستخدم", "User");

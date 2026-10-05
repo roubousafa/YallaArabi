@@ -69,6 +69,13 @@ using YallaArabi.Application.Features.Admin.GetParticipationAnswers;
 using YallaArabi.Application.Features.Admin.PrepareRecordingSession;
 using YallaArabi.Application.Features.Admin.ExportRecordingScript;
 using YallaArabi.Application.Features.Admin.UploadSessionAudio;
+using YallaArabi.Application.Features.Admin.AddLessonWords;
+using YallaArabi.Application.Features.Admin.RemoveLessonWord;
+using YallaArabi.Application.Features.Admin.AddLessonQuestion;
+using YallaArabi.Application.Features.Admin.UpdateLessonQuestion;
+using YallaArabi.Application.Features.Admin.DeleteLessonQuestion;
+using YallaArabi.Application.Features.Admin.GetLessonContent;
+using YallaArabi.Application.Features.Levels.GetLessonContent;
 
 
 namespace YallaArabi.Api.Controllers;
@@ -953,6 +960,99 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.Lessons.View)]
+    [HttpGet("lessons/{lessonId}/content")]
+    public async Task<IActionResult> GetLessonContent(Guid lessonId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new GetLessonContentForAdminQuery(lessonId), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<LessonContentResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<LessonContentResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Lessons.Edit)]
+    [HttpPost("lessons/{lessonId}/words")]
+    public async Task<IActionResult> AddLessonWords(Guid lessonId, [FromBody] AddLessonWordsBody body, CancellationToken ct)
+    {
+        var result = await _sender.Send(new AddLessonWordsCommand(lessonId, body.WordIds ?? Array.Empty<Guid>()), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<AddLessonWordsResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<AddLessonWordsResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Lessons.Edit)]
+    [HttpDelete("lessons/{lessonId}/words/{wordId}")]
+    public async Task<IActionResult> RemoveLessonWord(Guid lessonId, Guid wordId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new RemoveLessonWordCommand(lessonId, wordId), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(new { message = "Word removed from lesson." }))
+            : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Lessons.Edit)]
+    [HttpPost("lessons/{lessonId}/questions")]
+    public async Task<IActionResult> AddLessonQuestion(Guid lessonId, [FromBody] LessonQuestionBody body, CancellationToken ct)
+    {
+        var command = new AddLessonQuestionCommand(
+            lessonId,
+            body.Type,
+            body.QuestionText,
+            body.OptionA,
+            body.OptionB,
+            body.OptionC,
+            body.OptionD,
+            body.CorrectOption,
+            body.WordId,
+            body.AudioUrl,
+            body.ImageUrl);
+
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<AddLessonQuestionResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<AddLessonQuestionResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Lessons.Edit)]
+    [HttpPut("lessons/questions/{questionId}")]
+    public async Task<IActionResult> UpdateLessonQuestion(Guid questionId, [FromBody] UpdateLessonQuestionBody body, CancellationToken ct)
+    {
+        var command = new UpdateLessonQuestionCommand(
+            questionId,
+            body.Type,
+            body.QuestionText,
+            body.OptionA,
+            body.OptionB,
+            body.OptionC,
+            body.OptionD,
+            body.CorrectOption,
+            body.WordId,
+            body.AudioUrl,
+            body.ImageUrl,
+            body.OrderIndex);
+
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(new { message = "Question updated successfully." }))
+            : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.Lessons.Edit)]
+    [HttpDelete("lessons/questions/{questionId}")]
+    public async Task<IActionResult> DeleteLessonQuestion(Guid questionId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new DeleteLessonQuestionCommand(questionId), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<object>.Ok(new { message = "Question deleted successfully." }))
+            : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
     [HasPermission(Permissions.Challenges.ViewParticipants)]
     [HttpGet("challenges/participations/{participationId}/answers")]
     public async Task<IActionResult> GetParticipationAnswers(Guid participationId, CancellationToken ct)
@@ -1097,4 +1197,33 @@ public sealed record UpdateLessonBody(
     int OrderIndex,
     int PointsReward,
     Guid? CategoryId
+);
+
+public sealed record AddLessonWordsBody(IReadOnlyList<Guid>? WordIds);
+
+public sealed record LessonQuestionBody(
+    string Type,
+    string? QuestionText,
+    string? OptionA,
+    string? OptionB,
+    string? OptionC,
+    string? OptionD,
+    string? CorrectOption,
+    Guid? WordId,
+    string? AudioUrl,
+    string? ImageUrl
+);
+
+public sealed record UpdateLessonQuestionBody(
+    string Type,
+    string? QuestionText,
+    string? OptionA,
+    string? OptionB,
+    string? OptionC,
+    string? OptionD,
+    string? CorrectOption,
+    Guid? WordId,
+    string? AudioUrl,
+    string? ImageUrl,
+    int OrderIndex
 );

@@ -39,6 +39,12 @@ public class WordRepository : IWordRepository
     public async Task<Word?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         await _context.Words.FirstOrDefaultAsync(w => w.Id == id, ct);
 
+    public async Task<IReadOnlyList<Word>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+    {
+        var idList = ids.Distinct().ToList();
+        return await _context.Words.Where(w => idList.Contains(w.Id)).ToListAsync(ct);
+    }
+
     public async Task<(IReadOnlyList<Word> Items, int TotalCount)> GetPagedAsync(
         string? searchTerm, Guid? levelId, int pageNumber, int pageSize, CancellationToken ct = default)
     {

@@ -53,6 +53,8 @@ public static class DependencyInjection
         services.AddScoped<IPointRuleRepository, PointRuleRepository>();
         services.AddScoped<IPointTransactionRepository, PointTransactionRepository>();
         services.AddScoped<IUserActivityRepository, UserActivityRepository>();
+        services.AddScoped<ILessonContentRepository, LessonContentRepository>();
+        services.AddScoped<IUserNotificationRepository, UserNotificationRepository>();
         services.AddScoped<IClientTimeZoneProvider, HeaderTimeZoneProvider>();
         services.AddScoped<IChallengeRepository, ChallengeRepository>();
         services.AddScoped<IChallengeQuestionRepository, ChallengeQuestionRepository>();

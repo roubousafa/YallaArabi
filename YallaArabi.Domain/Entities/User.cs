@@ -25,6 +25,7 @@ public sealed class User : AggregateRoot
     public bool MustChangePassword { get; private set; }
 
     public string? FriendCode { get; private set; }
+    public string? AvatarUrl { get; private set; }
     private User() { }
 
     public static User Register(string fullName, string emailValue, string passwordHash)
@@ -103,6 +104,16 @@ public sealed class User : AggregateRoot
             throw new ArgumentException("Full name is too long", nameof(newFullName));
 
         FullName = newFullName.Trim();
+    }
+
+    public void ChangeEmail(string newEmail)
+    {
+        Email = Email.Create(newEmail);
+    }
+
+    public void SetAvatarUrl(string? avatarUrl)
+    {
+        AvatarUrl = string.IsNullOrWhiteSpace(avatarUrl) ? null : avatarUrl.Trim();
     }
 
     public void SetPasswordResetToken(string tokenHash, DateTime expiresAt)

@@ -17,6 +17,8 @@ public static class DependencyInjection
         services.AddScoped<IPointsService, PointsService>();
         services.AddScoped<IFriendCodeService, FriendCodeService>();
         services.AddScoped<IActivityService, ActivityService>();
+        services.AddScoped<ILessonContentService, LessonContentService>();
+        services.AddScoped<IReviewService, ReviewService>();
         return services;
     }
 }

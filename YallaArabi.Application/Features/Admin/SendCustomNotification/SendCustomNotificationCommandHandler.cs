@@ -1,6 +1,7 @@
 ﻿using Mediator;
 using YallaArabi.Application.Common;
 using YallaArabi.Application.Interfaces;
+using YallaArabi.Domain.Common;
 using YallaArabi.Domain.Entities;
 
 namespace YallaArabi.Application.Features.Admin.SendCustomNotification;
@@ -10,17 +11,20 @@ public sealed class SendCustomNotificationCommandHandler : IRequestHandler<SendC
     private readonly IUserRepository _userRepository;
     private readonly INotificationRepository _notificationRepository;
     private readonly IPushNotificationSender _pushNotificationSender;
+    private readonly IUserNotificationRepository _userNotificationRepository;
     private readonly ICurrentUserService _currentUserService;
 
     public SendCustomNotificationCommandHandler(
         IUserRepository userRepository,
         INotificationRepository notificationRepository,
         IPushNotificationSender pushNotificationSender,
+        IUserNotificationRepository userNotificationRepository,
         ICurrentUserService currentUserService)
     {
         _userRepository = userRepository;
         _notificationRepository = notificationRepository;
         _pushNotificationSender = pushNotificationSender;
+        _userNotificationRepository = userNotificationRepository;
         _currentUserService = currentUserService;
     }
 
@@ -88,6 +92,12 @@ public sealed class SendCustomNotificationCommandHandler : IRequestHandler<SendC
             currentAdminId.Value);
 
         await _notificationRepository.AddAsync(notification, cancellationToken);
+
+        // Every recipient gets it in their in-app inbox, including those without a push token.
+        await _userNotificationRepository.AddRangeAsync(
+            recipients.Select(r => UserNotification.Create(r.Id, NotificationTypes.AdminMessage, request.Title, request.Body, notification.Id)),
+            cancellationToken);
+
         await _notificationRepository.SaveChangesAsync(cancellationToken);
 
         return Result<SendCustomNotificationResponse>.Success(

@@ -36,6 +36,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(u => u.PreferredVoiceGender)
     .HasMaxLength(10);
+        builder.Property(u => u.AvatarUrl)
+    .HasMaxLength(500);
         builder.Property(u => u.FriendCode)
     .HasMaxLength(10);
 

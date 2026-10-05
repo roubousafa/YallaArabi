@@ -9,10 +9,12 @@ public sealed class AccountDeletionService : IAccountDeletionService
 {
     private readonly AppDbContext _context;
     private readonly ILogger<AccountDeletionService> _logger;
+    private readonly IFileStorage _fileStorage;
 
-    public AccountDeletionService(AppDbContext context, ILogger<AccountDeletionService> logger)
+    public AccountDeletionService(AppDbContext context, ILogger<AccountDeletionService> logger, IFileStorage fileStorage)
     {
         _context = context;
+        _fileStorage = fileStorage;
         _logger = logger;
     }
 
@@ -39,6 +41,9 @@ public sealed class AccountDeletionService : IAccountDeletionService
 
             var activities = await _context.UserActivities.Where(a => a.UserId == userId).ToListAsync(ct);
             _context.UserActivities.RemoveRange(activities);
+
+            var notifications = await _context.UserNotifications.Where(n => n.UserId == userId).ToListAsync(ct);
+            _context.UserNotifications.RemoveRange(notifications);
 
             var friendships = await _context.Friendships
                 .Where(f => f.RequesterId == userId || f.AddresseeId == userId)
@@ -69,6 +74,11 @@ public sealed class AccountDeletionService : IAccountDeletionService
 
             await _context.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
+
+            if (!string.IsNullOrWhiteSpace(user?.AvatarUrl))
+            {
+                await _fileStorage.DeleteAsync(user.AvatarUrl, ct);
+            }
 
             _logger.LogInformation("Account data deleted for user {UserId}", userId);
         }

@@ -6,6 +6,7 @@ using YallaArabi.Application.Features.Challenges.GetAvailableChallenges;
 using YallaArabi.Application.Features.Challenges.StartChallenge;
 using YallaArabi.Application.Features.Challenges.SubmitChallenge;
 using YallaArabi.Application.Features.Challenges.GetChallengeComparison;
+using YallaArabi.Application.Features.Challenges.GetChallengeLeaderboard;
 
 namespace YallaArabi.Api.Controllers;
 
@@ -50,6 +51,16 @@ public class ChallengesController : ControllerBase
         return result.IsSuccess
             ? Ok(ApiResponse<SubmitChallengeResponse>.Ok(result.Value!))
             : BadRequest(ApiResponse<SubmitChallengeResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HttpGet("{challengeId}/leaderboard")]
+    public async Task<IActionResult> GetLeaderboard(Guid challengeId, [FromQuery] string? scope, CancellationToken ct)
+    {
+        var result = await _sender.Send(new GetChallengeLeaderboardQuery(challengeId, scope), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<ChallengeLeaderboardResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<ChallengeLeaderboardResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
     [HttpGet("{challengeId}/comparison/{opponentUserId}")]

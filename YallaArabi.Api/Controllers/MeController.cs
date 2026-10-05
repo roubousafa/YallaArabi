@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using YallaArabi.Api.Common;
 using YallaArabi.Application.Features.Stats.GetDailyActivity;
 using YallaArabi.Application.Features.Stats.GetMyStats;
+using YallaArabi.Application.Features.Profile.GetMyProfile;
 
 namespace YallaArabi.Api.Controllers;
 
@@ -15,6 +16,16 @@ public class MeController : ControllerBase
     private readonly ISender _sender;
 
     public MeController(ISender sender) => _sender = sender;
+
+    [HttpGet]
+    public async Task<IActionResult> GetMyProfile(CancellationToken ct)
+    {
+        var result = await _sender.Send(new GetMyProfileQuery(), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<MyProfileResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<MyProfileResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
 
     [HttpGet("stats")]
     public async Task<IActionResult> GetMyStats(CancellationToken ct)

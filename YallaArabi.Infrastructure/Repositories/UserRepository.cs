@@ -48,6 +48,12 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         await _context.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
 
+    public async Task<IReadOnlyList<User>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+    {
+        var idList = ids.Distinct().ToList();
+        return await _context.Users.Where(u => idList.Contains(u.Id)).ToListAsync(ct);
+    }
+
     public async Task<User?> GetByGoogleIdAsync(string googleId, CancellationToken ct = default) =>
         await _context.Users.FirstOrDefaultAsync(u => u.GoogleId == googleId, ct);
 

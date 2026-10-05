@@ -21,6 +21,9 @@ public class AppDbContext : DbContext
     public DbSet<PointRule> PointRules => Set<PointRule>();
     public DbSet<PointTransaction> PointTransactions => Set<PointTransaction>();
     public DbSet<UserActivity> UserActivities => Set<UserActivity>();
+    public DbSet<LessonWord> LessonWords => Set<LessonWord>();
+    public DbSet<LessonQuestion> LessonQuestions => Set<LessonQuestion>();
+    public DbSet<UserNotification> UserNotifications => Set<UserNotification>();
     public DbSet<Challenge> Challenges => Set<Challenge>();
     public DbSet<ChallengeQuestion> ChallengeQuestions => Set<ChallengeQuestion>();
     public DbSet<ChallengeParticipation> ChallengeParticipations => Set<ChallengeParticipation>();

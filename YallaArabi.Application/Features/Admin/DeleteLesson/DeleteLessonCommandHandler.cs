@@ -7,10 +7,12 @@ namespace YallaArabi.Application.Features.Admin.DeleteLesson;
 public sealed class DeleteLessonCommandHandler : IRequestHandler<DeleteLessonCommand, Result<Unit>>
 {
     private readonly ILessonRepository _lessonRepository;
+    private readonly ILessonContentRepository _contentRepository;
 
-    public DeleteLessonCommandHandler(ILessonRepository lessonRepository)
+    public DeleteLessonCommandHandler(ILessonRepository lessonRepository, ILessonContentRepository contentRepository)
     {
         _lessonRepository = lessonRepository;
+        _contentRepository = contentRepository;
     }
 
     public async ValueTask<Result<Unit>> Handle(DeleteLessonCommand request, CancellationToken cancellationToken)
@@ -31,6 +33,7 @@ public sealed class DeleteLessonCommandHandler : IRequestHandler<DeleteLessonCom
                 $"Cannot delete this lesson because {completions} student(s) have already completed it. Deleting it would corrupt their progress.");
         }
 
+        await _contentRepository.RemoveAllForLessonAsync(lesson.Id, cancellationToken);
         await _lessonRepository.RemoveAsync(lesson, cancellationToken);
         await _lessonRepository.SaveChangesAsync(cancellationToken);
 
