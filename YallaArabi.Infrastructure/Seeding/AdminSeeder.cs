@@ -79,6 +79,7 @@ public static class AdminSeeder
             var passwordHash = passwordHasher.Hash(adminPassword);
             var adminUser = User.Register(adminFullName, adminEmail, passwordHash);
             adminUser.PromoteToAdmin();
+            adminUser.MarkEmailVerified();
             adminUser.AssignRole(superAdminRole.Id);
 
             await userRepository.AddAsync(adminUser);

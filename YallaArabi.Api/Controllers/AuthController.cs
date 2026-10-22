@@ -1,6 +1,8 @@
 ﻿using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using YallaArabi.Api.RateLimiting;
 using YallaArabi.Api.Common;
 using YallaArabi.Application.Common;
 using YallaArabi.Application.Features.Auth.ForgotPassword;
@@ -15,6 +17,7 @@ using YallaArabi.Application.Features.Profile.UpdateProfile;
 using YallaArabi.Application.Features.Auth.DeleteAccount;
 using YallaArabi.Application.Features.Auth.ChangePassword;
 using YallaArabi.Application.Features.Auth.ChangeEmail;
+using YallaArabi.Application.Features.Auth.VerifyEmail;
 using YallaArabi.Application.Features.Profile.SetAvatar;
 using Microsoft.Extensions.Options;
 using YallaArabi.Infrastructure.Storage;
@@ -30,6 +33,7 @@ public class AuthController : ControllerBase
     public AuthController(ISender sender) => _sender = sender;
 
     [HttpPost("register")]
+    [EnableRateLimiting(RateLimitPolicies.Auth)]
     public async Task<IActionResult> Register(RegisterUserCommand command, CancellationToken ct)
     {
         var result = await _sender.Send(command, ct);
@@ -40,6 +44,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting(RateLimitPolicies.Auth)]
     public async Task<IActionResult> Login(LoginUserCommand command, CancellationToken ct)
     {
         var result = await _sender.Send(command, ct);
@@ -50,6 +55,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("google")]
+    [EnableRateLimiting(RateLimitPolicies.Auth)]
     public async Task<IActionResult> GoogleLogin(LoginWithGoogleCommand command, CancellationToken ct)
     {
         var result = await _sender.Send(command, ct);
@@ -60,6 +66,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("refresh")]
+    [EnableRateLimiting(RateLimitPolicies.Refresh)]
     public async Task<IActionResult> Refresh(RefreshTokenCommand command, CancellationToken ct)
     {
         var result = await _sender.Send(command, ct);
@@ -78,6 +85,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("forgot-password")]
+    [EnableRateLimiting(RateLimitPolicies.Email)]
     public async Task<IActionResult> ForgotPassword(ForgotPasswordCommand command, CancellationToken ct)
     {
         await _sender.Send(command, ct);
@@ -86,6 +94,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("reset-password")]
+    [EnableRateLimiting(RateLimitPolicies.Auth)]
     public async Task<IActionResult> ResetPassword(ResetPasswordCommand command, CancellationToken ct)
     {
         var result = await _sender.Send(command, ct);
@@ -117,7 +126,32 @@ public class AuthController : ControllerBase
             : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
     [Authorize]
+    [HttpPost("verify-email")]
+    [EnableRateLimiting(RateLimitPolicies.Auth)]
+    public async Task<IActionResult> VerifyEmail(VerifyEmailCommand command, CancellationToken ct)
+    {
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<EmailVerificationResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<EmailVerificationResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [Authorize]
+    [HttpPost("resend-verification")]
+    [EnableRateLimiting(RateLimitPolicies.Email)]
+    public async Task<IActionResult> ResendVerification(CancellationToken ct)
+    {
+        var result = await _sender.Send(new ResendEmailVerificationCommand(), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<EmailVerificationResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<EmailVerificationResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [Authorize]
     [HttpDelete("account")]
+    [EnableRateLimiting(RateLimitPolicies.Auth)]
     public async Task<IActionResult> DeleteAccount([FromBody] DeleteAccountBody? body, CancellationToken ct)
     {
         var result = await _sender.Send(new DeleteAccountCommand(body?.Password), ct);
@@ -129,6 +163,7 @@ public class AuthController : ControllerBase
 
     [Authorize]
     [HttpPost("change-password")]
+    [EnableRateLimiting(RateLimitPolicies.Auth)]
     public async Task<IActionResult> ChangePassword(ChangePasswordCommand command, CancellationToken ct)
     {
         var result = await _sender.Send(command, ct);
@@ -140,6 +175,7 @@ public class AuthController : ControllerBase
 
     [Authorize]
     [HttpPost("change-email")]
+    [EnableRateLimiting(RateLimitPolicies.Email)]
     public async Task<IActionResult> ChangeEmail(ChangeEmailCommand command, CancellationToken ct)
     {
         var result = await _sender.Send(command, ct);

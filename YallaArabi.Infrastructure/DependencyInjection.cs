@@ -1,4 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
+using YallaArabi.Infrastructure.Ai;
+using YallaArabi.Infrastructure.Images;
+using YallaArabi.Infrastructure.Links;
+using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,6 +43,8 @@ public static class DependencyInjection
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IEmailSender, BrevoEmailSender>();
+        services.Configure<AppLinksOptions>(configuration.GetSection("App"));
+        services.AddScoped<IAppLinks, AppLinks>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IGoogleAuthValidator, GoogleAuthValidator>();
         services.AddScoped<IWordRepository, WordRepository>();
@@ -55,6 +61,26 @@ public static class DependencyInjection
         services.AddScoped<IUserActivityRepository, UserActivityRepository>();
         services.AddScoped<ILessonContentRepository, LessonContentRepository>();
         services.AddScoped<IUserNotificationRepository, UserNotificationRepository>();
+        services.AddScoped<IAiDictionaryRepository, AiDictionaryRepository>();
+        services.AddScoped<IAiModeSettingsRepository, AiModeSettingsRepository>();
+        services.Configure<AiOptions>(configuration.GetSection("Ai"));
+        // Claude runs only when a key is configured; otherwise the free test provider answers.
+        services.AddScoped<IDialectAiProvider>(sp =>
+            sp.GetRequiredService<IOptions<AiOptions>>().Value.UseClaude
+                ? ActivatorUtilities.CreateInstance<ClaudeDialectAiProvider>(sp)
+                : new FakeDialectAiProvider());
+
+        services.Configure<ImageSearchOptions>(configuration.GetSection("ImageSearch"));
+        services.AddHttpClient<PexelsImageSearchProvider>((sp, client) =>
+        {
+            client.BaseAddress = new Uri(sp.GetRequiredService<IOptions<ImageSearchOptions>>().Value.PexelsBaseUrl);
+            // A slow photo lookup must never hold up the student's search.
+            client.Timeout = TimeSpan.FromSeconds(5);
+        });
+        services.AddScoped<IImageSearchProvider>(sp =>
+            sp.GetRequiredService<IOptions<ImageSearchOptions>>().Value.UsePexels
+                ? sp.GetRequiredService<PexelsImageSearchProvider>()
+                : new NoImageSearchProvider());
         services.AddScoped<IClientTimeZoneProvider, HeaderTimeZoneProvider>();
         services.AddScoped<IChallengeRepository, ChallengeRepository>();
         services.AddScoped<IChallengeQuestionRepository, ChallengeQuestionRepository>();

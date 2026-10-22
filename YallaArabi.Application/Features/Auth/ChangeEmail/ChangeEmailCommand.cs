@@ -29,19 +29,22 @@ public sealed class ChangeEmailCommandHandler : IRequestHandler<ChangeEmailComma
     private readonly IPasswordHasher _passwordHasher;
     private readonly IEmailSender _emailSender;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IEmailVerificationService _verificationService;
 
     public ChangeEmailCommandHandler(
         IUserRepository userRepository,
         IRefreshTokenRepository refreshTokenRepository,
         IPasswordHasher passwordHasher,
         IEmailSender emailSender,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IEmailVerificationService verificationService)
     {
         _userRepository = userRepository;
         _refreshTokenRepository = refreshTokenRepository;
         _passwordHasher = passwordHasher;
         _emailSender = emailSender;
         _currentUserService = currentUserService;
+        _verificationService = verificationService;
     }
 
     public async ValueTask<Result<ChangeEmailResponse>> Handle(ChangeEmailCommand request, CancellationToken cancellationToken)
@@ -87,6 +90,7 @@ public sealed class ChangeEmailCommandHandler : IRequestHandler<ChangeEmailComma
         }
 
         user.ChangeEmail(newEmail);
+        var verificationCode = _verificationService.IssueCode(user);
 
         // Access tokens carry the email claim, so every session signs in again with the new address.
         var activeTokens = await _refreshTokenRepository.GetActiveByUserIdAsync(user.Id, cancellationToken);
@@ -106,6 +110,8 @@ public sealed class ChangeEmailCommandHandler : IRequestHandler<ChangeEmailComma
         {
             // The change is already saved; a failed notice (logged by the sender) must not undo it.
         }
+
+        await _verificationService.SendCodeAsync(user, verificationCode, cancellationToken);
 
         return Result<ChangeEmailResponse>.Success(new ChangeEmailResponse(user.Email.Value));
     }

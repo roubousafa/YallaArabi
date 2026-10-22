@@ -24,6 +24,8 @@ public class AppDbContext : DbContext
     public DbSet<LessonWord> LessonWords => Set<LessonWord>();
     public DbSet<LessonQuestion> LessonQuestions => Set<LessonQuestion>();
     public DbSet<UserNotification> UserNotifications => Set<UserNotification>();
+    public DbSet<AiDictionaryEntry> AiDictionaryEntries => Set<AiDictionaryEntry>();
+    public DbSet<AiModeSettings> AiModeSettings => Set<AiModeSettings>();
     public DbSet<Challenge> Challenges => Set<Challenge>();
     public DbSet<ChallengeQuestion> ChallengeQuestions => Set<ChallengeQuestion>();
     public DbSet<ChallengeParticipation> ChallengeParticipations => Set<ChallengeParticipation>();

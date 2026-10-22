@@ -4,4 +4,5 @@ public interface IEmailSender
 {
     Task SendPasswordResetEmailAsync(string toEmail, string fullName, string resetLink, CancellationToken ct = default);
     Task SendEmailChangedNoticeAsync(string oldEmail, string fullName, string newEmail, CancellationToken ct = default);
+    Task SendEmailVerificationCodeAsync(string toEmail, string fullName, string code, CancellationToken ct = default);
 }

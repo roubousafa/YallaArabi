@@ -7,9 +7,11 @@ using YallaArabi.Api.Common;
 using YallaArabi.Api.Middleware;
 using YallaArabi.Application;
 using YallaArabi.Infrastructure;
+using YallaArabi.Infrastructure.Persistence;
 using YallaArabi.Infrastructure.Seeding;
 using YallaArabi.Api.Authorization;
 using Microsoft.AspNetCore.Authorization;
+using YallaArabi.Api.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -94,6 +96,8 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddApiRateLimiting();
+
 var app = builder.Build();
 
 await AdminSeeder.SeedAsync(app.Services);
@@ -106,15 +110,14 @@ if (!string.IsNullOrEmpty(port))
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-//if (app.Environment.IsDevelopment())
-//{
-//    app.UseSwagger();
-//    app.UseSwaggerUI();
-//}
-
-app.UseSwagger();
-app.UseSwaggerUI();
+if (SwaggerAccess.IsEnabled(app.Environment, app.Configuration))
+{
+    app.UseSwaggerBasicAuth(app.Environment, app.Configuration);
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 app.UseCors("Frontend");
+app.UseRateLimiter();
 
 
 app.UseStaticFiles();
@@ -125,6 +128,23 @@ app.UseMiddleware<AuditLoggingMiddleware>();
 app.MapControllers();
 
 app.MapGet("/", () => "YallaArabi API is running ✅");
-app.MapGet("/healthz", () => Results.Ok(new { status = "healthy" }));
+// Monitoring services poll this; it fails when the database is unreachable, not only when the site is down.
+app.MapGet("/healthz", async (AppDbContext db, CancellationToken ct) =>
+{
+    var databaseUp = false;
+
+    try
+    {
+        databaseUp = await db.Database.CanConnectAsync(ct);
+    }
+    catch (Exception)
+    {
+        // Reported below as unhealthy.
+    }
+
+    return databaseUp
+        ? Results.Ok(new { status = "healthy", database = "up" })
+        : Results.Json(new { status = "unhealthy", database = "down" }, statusCode: StatusCodes.Status503ServiceUnavailable);
+}).DisableRateLimiting();
 
 app.Run();

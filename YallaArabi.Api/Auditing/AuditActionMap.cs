@@ -92,6 +92,29 @@ public static class AuditActionMap
                 : ("Remove word from lesson", "إزالة كلمة من درس", "Lesson");
         }
 
+        if (normalizedPath.Contains("/admin/ai-mode/settings"))
+        {
+            return ("Update AI Mode settings", "تعديل إعدادات الذكاء الاصطناعي", "AiModeSettings");
+        }
+
+        if (normalizedPath.Contains("/admin/ai-mode/entries") && normalizedPath.Contains("/image"))
+        {
+            return method == "DELETE"
+                ? ("Remove AI result image", "حذف صورة نتيجة ذكاء اصطناعي", "AiDictionaryEntry")
+                : normalizedPath.EndsWith("/image/search")
+                    ? ("Find AI result image", "جلب صورة تلقائية لنتيجة ذكاء اصطناعي", "AiDictionaryEntry")
+                    : ("Upload AI result image", "رفع صورة لنتيجة ذكاء اصطناعي", "AiDictionaryEntry");
+        }
+
+        if (normalizedPath.Contains("/admin/ai-mode/entries"))
+        {
+            return normalizedPath.EndsWith("/approve")
+                ? ("Approve AI result", "اعتماد نتيجة ذكاء اصطناعي", "AiDictionaryEntry")
+                : normalizedPath.EndsWith("/reject")
+                    ? ("Reject AI result", "رفض نتيجة ذكاء اصطناعي", "AiDictionaryEntry")
+                    : ("Edit AI result", "تعديل نتيجة ذكاء اصطناعي", "AiDictionaryEntry");
+        }
+
         if (normalizedPath.Contains("/role") && method == "PUT")
         {
             return ("Assign role to user", "إسناد دور لمستخدم", "User");

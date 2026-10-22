@@ -12,19 +12,22 @@ public sealed class RegisterUserCommandHandler : IRequestHandler<RegisterUserCom
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IRoleRepository _roleRepository;
+    private readonly IEmailVerificationService _verificationService;
 
     public RegisterUserCommandHandler(
         IUserRepository userRepository,
         IRefreshTokenRepository refreshTokenRepository,
         IPasswordHasher passwordHasher,
                 IRoleRepository roleRepository,
-        IJwtTokenGenerator jwtTokenGenerator)
+        IJwtTokenGenerator jwtTokenGenerator,
+        IEmailVerificationService verificationService)
     {
         _userRepository = userRepository;
         _refreshTokenRepository = refreshTokenRepository;
         _passwordHasher = passwordHasher;
         _roleRepository = roleRepository;
         _jwtTokenGenerator = jwtTokenGenerator;
+        _verificationService = verificationService;
     }
 
     public async ValueTask<Result<AuthResponse>> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
@@ -36,6 +39,7 @@ public sealed class RegisterUserCommandHandler : IRequestHandler<RegisterUserCom
 
         var passwordHash = _passwordHasher.Hash(request.Password);
         var user = User.Register(request.FullName, request.Email, passwordHash);
+        var verificationCode = _verificationService.IssueCode(user);
 
         await _userRepository.AddAsync(user, cancellationToken);
 
@@ -53,6 +57,8 @@ public sealed class RegisterUserCommandHandler : IRequestHandler<RegisterUserCom
         var refreshTokenEntity = Domain.Entities.RefreshToken.Issue(user.Id, refreshTokenHash, DateTime.UtcNow.AddDays(30));
         await _refreshTokenRepository.AddAsync(refreshTokenEntity, cancellationToken);
         await _refreshTokenRepository.SaveChangesAsync(cancellationToken);
+
+        await _verificationService.SendCodeAsync(user, verificationCode, cancellationToken);
 
         var response = new AuthResponse(user.Id, user.FullName, request.Email, accessToken, refreshTokenPlain);
         return Result<AuthResponse>.Success(response);

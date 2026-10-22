@@ -29,4 +29,8 @@
     <ProjectReference Include="..\YallaArabi.Infrastructure\YallaArabi.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Developer test page; never shipped to a real server. -->
+    <Content Update="wwwroot\google-test.html" CopyToPublishDirectory="Never" />
+  </ItemGroup>
 </Project>

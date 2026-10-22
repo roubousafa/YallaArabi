@@ -45,6 +45,13 @@ public sealed class AccountDeletionService : IAccountDeletionService
             var notifications = await _context.UserNotifications.Where(n => n.UserId == userId).ToListAsync(ct);
             _context.UserNotifications.RemoveRange(notifications);
 
+            // AI answers are shared dictionary content, so they stay; only the link to this student is removed.
+            var aiEntries = await _context.AiDictionaryEntries.Where(e => e.RequestedByUserId == userId).ToListAsync(ct);
+            foreach (var entry in aiEntries)
+            {
+                entry.ForgetRequester();
+            }
+
             var friendships = await _context.Friendships
                 .Where(f => f.RequesterId == userId || f.AddresseeId == userId)
                 .ToListAsync(ct);

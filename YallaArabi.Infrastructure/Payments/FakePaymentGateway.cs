@@ -1,13 +1,23 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using YallaArabi.Application.Interfaces;
 
 namespace YallaArabi.Infrastructure.Payments;
 
+// Stand-in until a real payment provider is wired in. It only works in Development: on a real server
+// it would let anyone activate premium through the public webhook, so it refuses everything there.
 public class FakePaymentGateway : IPaymentGateway
 {
     private readonly ILogger<FakePaymentGateway> _logger;
+    private readonly bool _isDevelopment;
 
-    public FakePaymentGateway(ILogger<FakePaymentGateway> logger) => _logger = logger;
+    public FakePaymentGateway(ILogger<FakePaymentGateway> logger, IHostEnvironment environment)
+    {
+        _logger = logger;
+        _isDevelopment = environment.IsDevelopment();
+    }
+
+    public bool IsAvailable => _isDevelopment;
 
     public Task<CheckoutSession> CreateCheckoutSessionAsync(Guid userId, string planCode, CancellationToken ct = default)
     {
@@ -23,6 +33,12 @@ public class FakePaymentGateway : IPaymentGateway
 
     public bool VerifyWebhookSignature(string payload, string signature)
     {
+        if (!_isDevelopment)
+        {
+            _logger.LogWarning("Rejected a payment webhook: no real payment provider is configured.");
+            return false;
+        }
+
         _logger.LogInformation("[DEV PAYMENT] Skipping signature verification (fake gateway).");
         return true;
     }

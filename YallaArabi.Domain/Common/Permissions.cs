@@ -114,6 +114,13 @@ public static class Permissions
         public const string Manage = "recordings.manage";
     }
 
+    public static class AiMode
+    {
+        public const string View = "ai_mode.view";
+        public const string Manage = "ai_mode.manage";
+        public const string Review = "ai_mode.review";
+    }
+
     public static class Lessons
     {
         public const string View = "lessons.view";
@@ -193,6 +200,10 @@ public static class Permissions
 
                 new(Recordings.View, "Recordings", "عرض جلسات التسجيل", "View recording sessions"),
         new(Recordings.Manage, "Recordings", "إدارة جلسات التسجيل", "Manage recording sessions"),
+
+        new(AiMode.View, "AI Mode", "عرض إعدادات ونتائج الذكاء الاصطناعي", "View AI Mode settings and results"),
+        new(AiMode.Manage, "AI Mode", "تعديل إعدادات الذكاء الاصطناعي", "Manage AI Mode settings"),
+        new(AiMode.Review, "AI Mode", "مراجعة نتائج الذكاء الاصطناعي", "Review AI Mode results"),
     };
 }
 

@@ -1,4 +1,5 @@
 ﻿using Mediator;
+using YallaArabi.Api.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using YallaArabi.Api.Common;
@@ -13,6 +14,7 @@ namespace YallaArabi.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/reviews")]
+[RequireVerifiedEmail]
 public class ReviewsController : ControllerBase
 {
     private readonly ISender _sender;

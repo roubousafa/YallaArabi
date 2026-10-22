@@ -26,6 +26,20 @@ public sealed class User : AggregateRoot
 
     public string? FriendCode { get; private set; }
     public string? AvatarUrl { get; private set; }
+    public int FailedLoginAttempts { get; private set; }
+    public DateTime? LockoutEndsAt { get; private set; }
+    public DateTime? EmailVerifiedAt { get; private set; }
+    public string? EmailVerificationCodeHash { get; private set; }
+    public DateTime? EmailVerificationExpiresAt { get; private set; }
+    public int EmailVerificationAttempts { get; private set; }
+
+    public const int MaxEmailVerificationAttempts = 5;
+    public static readonly TimeSpan EmailVerificationLifetime = TimeSpan.FromMinutes(30);
+
+    public bool IsEmailVerified => EmailVerifiedAt.HasValue;
+
+    public const int MaxFailedLoginAttempts = 5;
+    public static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
     private User() { }
 
     public static User Register(string fullName, string emailValue, string passwordHash)
@@ -71,6 +85,7 @@ public sealed class User : AggregateRoot
             PasswordHash = null,
             GoogleId = googleId,
             CreatedAt = DateTime.UtcNow,
+            EmailVerifiedAt = DateTime.UtcNow,
             SubscriptionStatus = "free"
         };
 
@@ -85,6 +100,12 @@ public sealed class User : AggregateRoot
             throw new ArgumentException("Google ID is required", nameof(googleId));
 
         GoogleId = googleId;
+
+        // Signing in with Google proves the person owns this address.
+        if (!IsEmailVerified)
+        {
+            MarkEmailVerified();
+        }
     }
 
     public void ChangePasswordHash(string newPasswordHash)
@@ -109,6 +130,57 @@ public sealed class User : AggregateRoot
     public void ChangeEmail(string newEmail)
     {
         Email = Email.Create(newEmail);
+        EmailVerifiedAt = null;
+        ClearEmailVerificationCode();
+    }
+
+    public void MarkEmailVerified()
+    {
+        EmailVerifiedAt = DateTime.UtcNow;
+        ClearEmailVerificationCode();
+    }
+
+    public void SetEmailVerificationCode(string codeHash, DateTime utcNow)
+    {
+        if (string.IsNullOrWhiteSpace(codeHash))
+            throw new ArgumentException("Code hash is required", nameof(codeHash));
+
+        EmailVerificationCodeHash = codeHash;
+        EmailVerificationExpiresAt = utcNow.Add(EmailVerificationLifetime);
+        EmailVerificationAttempts = 0;
+    }
+
+    // When the current code was sent, derived from its expiry.
+    public DateTime? EmailVerificationSentAt => EmailVerificationExpiresAt?.Subtract(EmailVerificationLifetime);
+
+    public EmailVerificationResult VerifyEmailCode(string codeHash, DateTime utcNow)
+    {
+        if (IsEmailVerified)
+            return EmailVerificationResult.Verified;
+
+        if (EmailVerificationCodeHash is null || EmailVerificationExpiresAt is null || utcNow >= EmailVerificationExpiresAt)
+            return EmailVerificationResult.Expired;
+
+        if (EmailVerificationAttempts >= MaxEmailVerificationAttempts)
+            return EmailVerificationResult.TooManyAttempts;
+
+        if (EmailVerificationCodeHash != codeHash)
+        {
+            EmailVerificationAttempts++;
+            return EmailVerificationAttempts >= MaxEmailVerificationAttempts
+                ? EmailVerificationResult.TooManyAttempts
+                : EmailVerificationResult.Invalid;
+        }
+
+        MarkEmailVerified();
+        return EmailVerificationResult.Verified;
+    }
+
+    private void ClearEmailVerificationCode()
+    {
+        EmailVerificationCodeHash = null;
+        EmailVerificationExpiresAt = null;
+        EmailVerificationAttempts = 0;
     }
 
     public void SetAvatarUrl(string? avatarUrl)
@@ -136,6 +208,26 @@ public sealed class User : AggregateRoot
     {
         PasswordResetTokenHash = null;
         PasswordResetTokenExpiresAt = null;
+    }
+
+    public bool IsLockedOut(DateTime utcNow) => LockoutEndsAt.HasValue && utcNow < LockoutEndsAt.Value;
+
+    // Locks password sign-in for a while after too many wrong passwords in a row.
+    public void RegisterFailedLogin(DateTime utcNow)
+    {
+        FailedLoginAttempts++;
+
+        if (FailedLoginAttempts >= MaxFailedLoginAttempts)
+        {
+            LockoutEndsAt = utcNow.Add(LockoutDuration);
+            FailedLoginAttempts = 0;
+        }
+    }
+
+    public void ClearFailedLogins()
+    {
+        FailedLoginAttempts = 0;
+        LockoutEndsAt = null;
     }
 
     public void SetCurrentLevel(Guid levelId)

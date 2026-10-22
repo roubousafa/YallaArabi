@@ -43,6 +43,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.HasIndex(u => u.FriendCode).IsUnique();
 
+        builder.Ignore(u => u.IsEmailVerified);
+        builder.Ignore(u => u.EmailVerificationSentAt);
+
         builder.Ignore(u => u.DomainEvents);
     }
 }

@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>يلا عربي - حذف الحساب</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --text:#1d2330; --muted:#6b7280; --line:#d9dde3; --accent:#0f766e; --danger:#b42318; --ok:#067647; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#12151b; --card:#1b2029; --text:#e8ebf0; --muted:#9aa3b2; --line:#2c3340; --accent:#2dd4bf; --danger:#f97066; --ok:#47cd89; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; display:grid; place-items:center; padding:16px; background:var(--bg); color:var(--text);
+         font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif; }
+  main { width:100%; max-width:440px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:28px 24px; }
+  h1 { font-size:1.3rem; margin:0 0 6px; }
+  h2 { font-size:1rem; margin:24px 0 6px; }
+  p, li { color:var(--muted); line-height:1.7; font-size:.95rem; }
+  p { margin:0 0 12px; }
+  ul { margin:0 0 12px; padding-inline-start:18px; }
+  label { display:block; font-size:.9rem; margin:14px 0 6px; }
+  input[type=email], input[type=password] { width:100%; padding:11px 12px; font-size:1rem; border:1px solid var(--line); border-radius:8px; background:transparent; color:var(--text); }
+  input:focus { outline:2px solid var(--accent); outline-offset:1px; }
+  .check { display:flex; gap:8px; align-items:flex-start; margin-top:16px; font-size:.9rem; color:var(--text); }
+  .check input { margin-top:4px; }
+  button { width:100%; margin-top:18px; padding:12px; font-size:1rem; border:0; border-radius:8px; background:var(--danger); color:#fff; cursor:pointer; }
+  button:disabled { opacity:.6; cursor:default; }
+  .msg { margin-top:16px; font-size:.95rem; line-height:1.6; }
+  .msg.error { color:var(--danger); }
+  .msg.ok { color:var(--ok); }
+  .en { direction:ltr; text-align:left; display:block; font-size:.85rem; color:var(--muted); margin-top:2px; }
+  hr { border:0; border-top:1px solid var(--line); margin:24px 0 0; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>حذف حساب يلا عربي<span class="en">Delete your Yalla Arabi account</span></h1>
+  <p>لما تحذف حسابك، منحذف نهائياً:</p>
+  <ul>
+    <li>اسمك وإيميلك وصورتك</li>
+    <li>تقدّمك بالدروس والمراجعة والنقاط</li>
+    <li>الكلمات المحفوظة والأصدقاء والتحديات</li>
+    <li>اشتراكك (إذا في اشتراك مدفوع بالمتجر، لازم تلغيه كمان من إعدادات المتجر)</li>
+  </ul>
+  <p>الحذف فوري وما بيرجع.</p>
+
+  <form id="form" novalidate>
+    <label for="email">الإيميل</label>
+    <input id="email" type="email" autocomplete="email" required>
+    <label for="password">كلمة السر</label>
+    <input id="password" type="password" autocomplete="current-password" required>
+    <label class="check"><input id="confirm" type="checkbox"> فهمت إنو كل بياناتي رح تنحذف نهائياً</label>
+    <button id="submit" type="submit">احذف حسابي نهائياً</button>
+  </form>
+
+  <div id="message" class="msg" role="status" aria-live="polite"></div>
+
+  <hr>
+  <h2>سجّلت بحساب Google؟</h2>
+  <p>حسابات Google ما إلها كلمة سر عنا. احذف حسابك من جوّا التطبيق: <b>الإعدادات ← حذف الحساب</b><span id="support"></span>.</p>
+</main>
+
+<script>
+(function () {
+  var form = document.getElementById("form");
+  var message = document.getElementById("message");
+  var button = document.getElementById("submit");
+
+  function show(text, kind) {
+    message.textContent = text;
+    message.className = "msg " + kind;
+  }
+
+  fetch("/api/v1/app/info").then(function (r) { return r.ok ? r.json() : null; }).then(function (body) {
+    var email = body && body.data && body.data.supportEmail;
+    if (email) {
+      var span = document.getElementById("support");
+      span.append("، أو راسلنا من نفس الإيميل على ");
+      var link = document.createElement("a");
+      link.href = "mailto:" + email + "?subject=" + encodeURIComponent("طلب حذف حساب");
+      link.textContent = email;
+      span.append(link);
+    }
+  }).catch(function () {});
+
+  function errorCode(body) {
+    return body && body.error && body.error.code;
+  }
+
+  form.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    var email = document.getElementById("email").value.trim();
+    var password = document.getElementById("password").value;
+
+    if (!email || !password) { show("اكتب الإيميل وكلمة السر.", "error"); return; }
+    if (!document.getElementById("confirm").checked) { show("أكّد إنك فهمت إنو الحذف نهائي.", "error"); return; }
+
+    button.disabled = true;
+    show("", "");
+
+    try {
+      var login = await fetch("/api/v1/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email, password: password })
+      });
+      var loginBody = await login.json().catch(function () { return null; });
+
+      if (!login.ok) {
+        var code = errorCode(loginBody);
+        if (login.status === 429) show("محاولات كتير. استنّى دقيقة وجرّب مرة تانية.", "error");
+        else if (code === "account_locked") show("الحساب مسكّر مؤقتاً بسبب محاولات غلط. جرّب بعد ربع ساعة.", "error");
+        else if (code === "password_change_required") show("لازم تغيّر كلمة السر أول من رابط الإيميل، وبعدين ترجع تحذف الحساب.", "error");
+        else show("الإيميل أو كلمة السر غلط.", "error");
+        button.disabled = false;
+        return;
+      }
+
+      var remove = await fetch("/api/v1/auth/account", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + loginBody.data.accessToken },
+        body: JSON.stringify({ password: password })
+      });
+
+      if (remove.ok) {
+        form.hidden = true;
+        show("انحذف حسابك وكل بياناتك. شكراً إنك جرّبت يلا عربي.", "ok");
+        return;
+      }
+
+      var removeBody = await remove.json().catch(function () { return null; });
+      if (errorCode(removeBody) === "admin_cannot_self_delete") show("حسابات الإدارة ما بتنحذف من هون.", "error");
+      else show("صار خطأ وما انحذف الحساب. جرّب مرة تانية بعد شوي.", "error");
+    } catch (e) {
+      show("ما قدرنا نوصل للسيرفر. تأكد من الإنترنت وجرّب مرة تانية.", "error");
+    }
+
+    button.disabled = false;
+  });
+})();
+</script>
+</body>
+</html>

@@ -54,6 +54,26 @@ public class BrevoEmailSender : IEmailSender
         await SendAsync(message, toEmail, "Password reset email", ct);
     }
 
+    public async Task SendEmailVerificationCodeAsync(string toEmail, string fullName, string code, CancellationToken ct = default)
+    {
+        var message = new MimeMessage();
+        message.From.Add(new MailboxAddress(_options.SenderName, _options.SenderEmail));
+        message.To.Add(new MailboxAddress(fullName, toEmail));
+        message.Subject = $"{code} is your Yalla Arabi code / رمز التأكيد";
+        message.Body = new TextPart("plain")
+        {
+            Text = $"مرحبا {fullName}،\n\n" +
+                   $"رمز تأكيد إيميلك بتطبيق يلا عربي هو: {code}\n" +
+                   $"الرمز صالح لمدة 30 دقيقة. إذا ما سجّلت حساب، تجاهل هالرسالة.\n\n" +
+                   $"Hi {fullName},\n\n" +
+                   $"Your Yalla Arabi verification code is: {code}\n" +
+                   $"It expires in 30 minutes. If you didn't create an account, you can ignore this email.\n\n" +
+                   $"— Yalla Arabi Team"
+        };
+
+        await SendAsync(message, toEmail, "Email verification code", ct);
+    }
+
     private async Task SendAsync(MimeMessage message, string toEmail, string emailKind, CancellationToken ct)
     {
         using var client = new SmtpClient();

@@ -8,15 +8,18 @@ public sealed class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswor
     private readonly IUserRepository _userRepository;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IEmailSender _emailSender;
+    private readonly IAppLinks _appLinks;
 
     public ForgotPasswordCommandHandler(
         IUserRepository userRepository,
         IJwtTokenGenerator jwtTokenGenerator,
-        IEmailSender emailSender)
+        IEmailSender emailSender,
+        IAppLinks appLinks)
     {
         _userRepository = userRepository;
         _jwtTokenGenerator = jwtTokenGenerator;
         _emailSender = emailSender;
+        _appLinks = appLinks;
     }
 
     public async ValueTask<Unit> Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
@@ -35,7 +38,7 @@ public sealed class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswor
         user.SetPasswordResetToken(resetTokenHash, expiresAt);
         await _userRepository.SaveChangesAsync(cancellationToken);
 
-        var resetLink = $"https://yourapp.com/reset-password?token={resetTokenPlain}&email={user.Email.Value}";
+        var resetLink = _appLinks.PasswordReset(resetTokenPlain, user.Email.Value);
         await _emailSender.SendPasswordResetEmailAsync(user.Email.Value, user.FullName, resetLink, cancellationToken);
 
         return Unit.Value;

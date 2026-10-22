@@ -19,7 +19,8 @@ public sealed record MyProfileResponse(
     ProfileDialect? Dialect,
     string? VoiceGender,
     bool IsPremium,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    bool IsEmailVerified
 );
 
 public sealed record ProfileDialect(string Key, string NameAr, string NameEn);
@@ -78,7 +79,8 @@ public sealed class GetMyProfileQueryHandler : IRequestHandler<GetMyProfileQuery
             dialect is null ? null : new ProfileDialect(dialect.Key, dialect.NameAr, dialect.NameEn),
             user.PreferredVoiceGender,
             subscription is not null && subscription.IsCurrentlyActive(),
-            user.CreatedAt);
+            user.CreatedAt,
+            user.IsEmailVerified);
 
         return Result<MyProfileResponse>.Success(response);
     }

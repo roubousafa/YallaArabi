@@ -39,6 +39,7 @@ public sealed class CreateTeamMemberCommandHandler : IRequestHandler<CreateTeamM
 
         var passwordHash = _passwordHasher.Hash(request.Password);
         var user = User.Register(request.FullName, request.Email, passwordHash);
+        user.MarkEmailVerified();
 
         user.AssignRole(role.Id);
 

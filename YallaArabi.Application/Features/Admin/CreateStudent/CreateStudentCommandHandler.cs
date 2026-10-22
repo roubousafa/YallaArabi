@@ -34,6 +34,7 @@ public sealed class CreateStudentCommandHandler : IRequestHandler<CreateStudentC
 
         var passwordHash = _passwordHasher.Hash(request.Password);
         var user = User.Register(request.FullName, request.Email, passwordHash);
+        user.MarkEmailVerified();
 
         if (!string.IsNullOrWhiteSpace(request.LevelCode))
         {

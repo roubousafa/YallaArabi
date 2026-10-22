@@ -12,6 +12,7 @@ namespace YallaArabi.Infrastructure.Security;
 public class JwtTokenGenerator : IJwtTokenGenerator
 {
     public const string PermissionClaimType = "permission";
+    public const string EmailVerifiedClaimType = "email_verified";
 
     private readonly JwtOptions _options;
 
@@ -24,7 +25,8 @@ public class JwtTokenGenerator : IJwtTokenGenerator
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email.Value),
             new("full_name", user.FullName),
-            new(ClaimTypes.Role, user.Role)
+            new(ClaimTypes.Role, user.Role),
+            new(EmailVerifiedClaimType, user.IsEmailVerified ? "true" : "false")
         };
 
         if (user.RoleId.HasValue)

@@ -24,6 +24,12 @@ public sealed class CreateCheckoutCommandHandler : IRequestHandler<CreateCheckou
             return Result<CreateCheckoutResponse>.Failure("unauthorized", "You must be logged in to perform this action");
         }
 
+        if (!_paymentGateway.IsAvailable)
+        {
+            return Result<CreateCheckoutResponse>.Failure(
+                "payments_unavailable", "Online payment is not available yet. Please contact support to subscribe.");
+        }
+
         var session = await _paymentGateway.CreateCheckoutSessionAsync(currentUserId.Value, request.PlanCode, cancellationToken);
 
         return Result<CreateCheckoutResponse>.Success(new CreateCheckoutResponse(session.CheckoutUrl));

@@ -13,17 +13,20 @@ public sealed class ForcePasswordResetCommandHandler : IRequestHandler<ForcePass
     private readonly IUserRepository _userRepository;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IEmailSender _emailSender;
+    private readonly IAppLinks _appLinks;
     private readonly ICurrentUserService _currentUserService;
 
     public ForcePasswordResetCommandHandler(
         IUserRepository userRepository,
         IRefreshTokenRepository refreshTokenRepository,
         IEmailSender emailSender,
+        IAppLinks appLinks,
         ICurrentUserService currentUserService)
     {
         _userRepository = userRepository;
         _refreshTokenRepository = refreshTokenRepository;
         _emailSender = emailSender;
+        _appLinks = appLinks;
         _currentUserService = currentUserService;
     }
 
@@ -87,7 +90,7 @@ public sealed class ForcePasswordResetCommandHandler : IRequestHandler<ForcePass
                 user.SetPasswordResetToken(resetTokenHash, DateTime.UtcNow.AddMinutes(ResetTokenValidMinutes));
                 await _userRepository.SaveChangesAsync(cancellationToken);
 
-                var resetLink = $"https://yourapp.com/reset-password?token={resetTokenPlain}&email={user.Email.Value}";
+                var resetLink = _appLinks.PasswordReset(resetTokenPlain, user.Email.Value);
 
                 try
                 {

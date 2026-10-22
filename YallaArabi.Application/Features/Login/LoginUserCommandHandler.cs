@@ -30,9 +30,32 @@ public sealed class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, 
     {
         var user = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
 
-        if (user is null || user.PasswordHash is null || !_passwordHasher.Verify(request.Password, user.PasswordHash))
+        if (user is null || user.PasswordHash is null)
         {
             return Result<AuthResponse>.Failure("invalid_credentials", "Invalid email or password");
+        }
+
+        var now = DateTime.UtcNow;
+
+        if (user.IsLockedOut(now))
+        {
+            var minutesLeft = (int)Math.Ceiling((user.LockoutEndsAt!.Value - now).TotalMinutes);
+            return Result<AuthResponse>.Failure(
+                "account_locked",
+                $"Too many failed attempts. Try again in {minutesLeft} minute(s) or reset your password.");
+        }
+
+        if (!_passwordHasher.Verify(request.Password, user.PasswordHash))
+        {
+            user.RegisterFailedLogin(now);
+            await _userRepository.SaveChangesAsync(cancellationToken);
+            return Result<AuthResponse>.Failure("invalid_credentials", "Invalid email or password");
+        }
+
+        if (user.FailedLoginAttempts > 0 || user.LockoutEndsAt.HasValue)
+        {
+            user.ClearFailedLogins();
+            await _userRepository.SaveChangesAsync(cancellationToken);
         }
 
         if (user.MustChangePassword)

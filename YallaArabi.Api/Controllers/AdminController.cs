@@ -75,6 +75,7 @@ using YallaArabi.Application.Features.Admin.AddLessonQuestion;
 using YallaArabi.Application.Features.Admin.UpdateLessonQuestion;
 using YallaArabi.Application.Features.Admin.DeleteLessonQuestion;
 using YallaArabi.Application.Features.Admin.GetLessonContent;
+using YallaArabi.Application.Features.Admin.AiMode;
 using YallaArabi.Application.Features.Levels.GetLessonContent;
 
 
@@ -960,6 +961,138 @@ public class AdminController : ControllerBase
             : BadRequest(ApiResponse<object>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
+    [HasPermission(Permissions.AiMode.View)]
+    [HttpGet("ai-mode/settings")]
+    public async Task<IActionResult> GetAiModeSettings(CancellationToken ct)
+    {
+        var result = await _sender.Send(new GetAiModeSettingsQuery(), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<AiModeSettingsResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<AiModeSettingsResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.AiMode.Manage)]
+    [HttpPut("ai-mode/settings")]
+    public async Task<IActionResult> UpdateAiModeSettings(UpdateAiModeSettingsCommand command, CancellationToken ct)
+    {
+        var result = await _sender.Send(command, ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<AiModeSettingsResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<AiModeSettingsResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.AiMode.View)]
+    [HttpGet("ai-mode/entries")]
+    public async Task<IActionResult> GetAiEntries(
+        [FromQuery] string? status,
+        [FromQuery] string? dialect,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken ct = default)
+    {
+        var result = await _sender.Send(new GetAiEntriesQuery(status, dialect, pageNumber, pageSize), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<PagedAiEntriesResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<PagedAiEntriesResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.AiMode.Review)]
+    [HttpPut("ai-mode/entries/{entryId}")]
+    public async Task<IActionResult> EditAiEntry(Guid entryId, [FromBody] EditAiEntryBody body, CancellationToken ct)
+    {
+        var result = await _sender.Send(new EditAiEntryCommand(entryId, body.DialectText, body.EnglishMeaning, body.Arabizi), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<AiEntryItem>.Ok(result.Value!))
+            : BadRequest(ApiResponse<AiEntryItem>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.AiMode.Review)]
+    [HttpPost("ai-mode/entries/{entryId}/approve")]
+    public async Task<IActionResult> ApproveAiEntry(Guid entryId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new ReviewAiEntryCommand(entryId, AiEntryReviewAction.Approve), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<AiEntryItem>.Ok(result.Value!))
+            : BadRequest(ApiResponse<AiEntryItem>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.AiMode.Review)]
+    [HttpPost("ai-mode/entries/{entryId}/reject")]
+    public async Task<IActionResult> RejectAiEntry(Guid entryId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new ReviewAiEntryCommand(entryId, AiEntryReviewAction.Reject), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<AiEntryItem>.Ok(result.Value!))
+            : BadRequest(ApiResponse<AiEntryItem>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.AiMode.Review)]
+    [HttpPost("ai-mode/entries/{entryId}/image")]
+    [RequestSizeLimit(6_000_000)]
+    public async Task<IActionResult> UploadAiEntryImage(
+        Guid entryId,
+        IFormFile file,
+        [FromServices] IOptions<FileStorageOptions> storageOptions,
+        CancellationToken ct)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(ApiResponse<AiEntryItem>.Fail("file_required", "Please select an image to upload."));
+        }
+
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+        if (!allowedExtensions.Contains(extension))
+        {
+            return BadRequest(ApiResponse<AiEntryItem>.Fail(
+                "invalid_extension",
+                $"Allowed image formats: {string.Join(", ", allowedExtensions)}"));
+        }
+
+        if (file.Length > storageOptions.Value.MaxImageSizeBytes)
+        {
+            return BadRequest(ApiResponse<AiEntryItem>.Fail(
+                "file_too_large",
+                $"Image must be smaller than {storageOptions.Value.MaxImageSizeBytes / 1_000_000} MB."));
+        }
+
+        await using var stream = file.OpenReadStream();
+        var result = await _sender.Send(new UploadAiEntryImageCommand(entryId, stream, file.FileName, file.ContentType), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<AiEntryItem>.Ok(result.Value!))
+            : BadRequest(ApiResponse<AiEntryItem>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.AiMode.Review)]
+    [HttpDelete("ai-mode/entries/{entryId}/image")]
+    public async Task<IActionResult> RemoveAiEntryImage(Guid entryId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new RemoveAiEntryImageCommand(entryId), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<AiEntryItem>.Ok(result.Value!))
+            : BadRequest(ApiResponse<AiEntryItem>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [HasPermission(Permissions.AiMode.Review)]
+    [HttpPost("ai-mode/entries/{entryId}/image/search")]
+    public async Task<IActionResult> FindAiEntryImage(Guid entryId, [FromBody] FindAiEntryImageBody? body, CancellationToken ct)
+    {
+        var result = await _sender.Send(new FindAiEntryImageCommand(entryId, body?.Query), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<AiEntryItem>.Ok(result.Value!))
+            : BadRequest(ApiResponse<AiEntryItem>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
     [HasPermission(Permissions.Lessons.View)]
     [HttpGet("lessons/{lessonId}/content")]
     public async Task<IActionResult> GetLessonContent(Guid lessonId, CancellationToken ct)
@@ -1227,3 +1360,7 @@ public sealed record UpdateLessonQuestionBody(
     string? ImageUrl,
     int OrderIndex
 );
+
+public sealed record EditAiEntryBody(string DialectText, string EnglishMeaning, string Arabizi);
+
+public sealed record FindAiEntryImageBody(string? Query);

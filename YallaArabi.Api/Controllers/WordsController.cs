@@ -1,4 +1,5 @@
 ﻿using Mediator;
+using YallaArabi.Api.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using YallaArabi.Api.Common;
@@ -7,11 +8,13 @@ using YallaArabi.Application.Features.Words.GetSavedWords;
 using YallaArabi.Application.Features.Words.RemoveSavedWord;
 using YallaArabi.Application.Features.Words.SaveWord;
 using YallaArabi.Application.Features.Words.SearchWords;
+using YallaArabi.Application.Features.Words.AiSearch;
 
 namespace YallaArabi.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/words")]
+[RequireVerifiedEmail]
 public class WordsController : ControllerBase
 {
     private readonly ISender _sender;
@@ -27,6 +30,17 @@ public class WordsController : ControllerBase
         return result.IsSuccess
             ? Ok(ApiResponse<IReadOnlyList<WordSearchResult>>.Ok(result.Value!))
             : BadRequest(ApiResponse<IReadOnlyList<WordSearchResult>>.Fail(result.ErrorCode!, result.ErrorMessage!));
+    }
+
+    [Authorize]
+    [HttpGet("ai-search")]
+    public async Task<IActionResult> AiSearch([FromQuery] string query, CancellationToken ct)
+    {
+        var result = await _sender.Send(new AiSearchQuery(query ?? string.Empty), ct);
+
+        return result.IsSuccess
+            ? Ok(ApiResponse<AiSearchResponse>.Ok(result.Value!))
+            : BadRequest(ApiResponse<AiSearchResponse>.Fail(result.ErrorCode!, result.ErrorMessage!));
     }
 
     [Authorize]
